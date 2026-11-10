@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="VoteConfig" format=3]
+
+[ext_resource type="Script" path="res://common/vote_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+start_mincho_percent = 30.0
+vote_delta = Array[float]([5.0, 2.0, -3.0])
+score = Array[int]([3, 2, 0])
