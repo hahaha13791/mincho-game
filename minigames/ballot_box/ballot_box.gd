@@ -166,7 +166,7 @@ func _show_overlay(text: String, button_text: String, action: Callable) -> void:
 func _spawn_tray_paper() -> void:
 	var p: BallotPaper = BallotPaper.new()
 	p.setup(SHAPES.pick_random(), PALETTE.mincho)
-	p.freeze = true # 집어서 놓기 전까지 대기
+	p.set_waiting(true) # 집기 전까지 위치 고정, 물리 없음
 	p.position = TRAY_POS
 	add_child(p)
 	_papers.append(p)
@@ -179,7 +179,7 @@ func _try_pick(point: Vector3) -> void:
 		if p.contains(point):
 			_held = p
 			_held_offset = p.position - point
-			p.freeze = false
+			p.set_waiting(false)
 			p.gravity_scale = 0.0
 			p.linear_velocity = Vector3.ZERO
 			p.angular_velocity = Vector3.ZERO

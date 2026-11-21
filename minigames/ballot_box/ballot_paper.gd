@@ -12,7 +12,6 @@ func setup(shape: Array, color: Color) -> void:
 	axis_lock_linear_z = true
 	axis_lock_angular_x = true
 	axis_lock_angular_y = true
-	freeze_mode = RigidBody3D.FREEZE_MODE_KINEMATIC
 	var pm: PhysicsMaterial = PhysicsMaterial.new()
 	pm.friction = 0.7
 	pm.bounce = 0.0
@@ -34,6 +33,13 @@ func setup(shape: Array, color: Color) -> void:
 		m.mesh = mesh
 		m.position = center
 		add_child(m)
+
+
+## 대기 중인 표는 위치를 고정하고 충돌도 끈다 (집은 표나 쌓인 표를 밀어내지 않게)
+func set_waiting(waiting: bool) -> void:
+	freeze = waiting
+	collision_layer = 0 if waiting else 1
+	collision_mask = 0 if waiting else 1
 
 
 ## 월드 좌표 점이 이 표 위인지 (집을 때 사용)
