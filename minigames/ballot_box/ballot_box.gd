@@ -17,6 +17,8 @@ const LID_CLOSED_Y: float = 2.2
 const OBSERVER_FROM_X: float = -10.0
 const OBSERVER_TO_X: float = -6.8
 const KILL_Y: float = -8.0
+const GRAB_GAIN: float = 25.0 # 집은 표가 마우스를 따라오는 속도 (거리 × 이 값)
+const MAX_GRAB_SPEED: float = 30.0
 # 접힌 표 모양: 몸 중심 기준 직사각형 조각들
 const SHAPES: Array = [
 	[Rect2(-1.0, -0.25, 2.0, 0.5)],
@@ -76,6 +78,11 @@ func _process(delta: float) -> void:
 
 
 func _physics_process(_delta: float) -> void:
+	if _held != null:
+		# 위치를 직접 대입하면 물리 엔진이 덮어쓰므로, 속도로 마우스 쪽으로 끌어온다 (쌓인 표도 통과하지 않음)
+		var target: Vector3 = _mouse_to_plane(get_viewport().get_mouse_position()) + _held_offset
+		_held.linear_velocity = ((target - _held.position) * GRAB_GAIN).limit_length(MAX_GRAB_SPEED)
+		_held.angular_velocity = Vector3.ZERO
 	for p in _papers.duplicate():
 		if p != _held and p != _tray and p.position.y < KILL_Y:
 			_papers.erase(p)
@@ -92,9 +99,6 @@ func _unhandled_input(event: InputEvent) -> void:
 				_try_pick(_mouse_to_plane(mb.position))
 			elif not mb.pressed and _held != null:
 				_drop()
-	elif event is InputEventMouseMotion and _held != null:
-		var mm: InputEventMouseMotion = event
-		_held.position = _mouse_to_plane(mm.position) + _held_offset
 
 
 func _start() -> void:
@@ -175,7 +179,8 @@ func _try_pick(point: Vector3) -> void:
 		if p.contains(point):
 			_held = p
 			_held_offset = p.position - point
-			p.freeze = true
+			p.freeze = false
+			p.gravity_scale = 0.0
 			p.linear_velocity = Vector3.ZERO
 			p.angular_velocity = Vector3.ZERO
 			if p == _tray:
@@ -183,9 +188,8 @@ func _try_pick(point: Vector3) -> void:
 			return
 
 
-# shortcut: 집은 표가 쌓인 표를 통과해 놓일 수 있어 겹쳐 놓으면 튈 수 있음, 플레이 테스트에서 거슬리면 이동 제한 추가
 func _drop() -> void:
-	_held.freeze = false
+	_held.gravity_scale = 1.0
 	_held = null
 
 
