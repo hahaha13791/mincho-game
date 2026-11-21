@@ -4,4 +4,4 @@
 
 | 파일 | 내용 |
 |---|---|
-| ballot-box.md | 1번 미니게임 (뱃속 패킹, id `ballot_box`) |
+| ballot-box.md | 1번 미니게임 (임신한 투표함, id `ballot_box`) |
