@@ -213,8 +213,6 @@ func _overflows(inside: Array[BallotPaper]) -> bool:
 func _refresh() -> void:
 	var inside: Array[BallotPaper] = _in_box()
 	$HUD/FillLabel.text = "%d / %d장%s" % [inside.size(), target_papers, "  (선 넘음!)" if _overflows(inside) else ""]
-	var bulge: float = 1.0 + 0.12 * minf(float(inside.size()) / float(target_papers), 1.0)
-	_body.scale = Vector3(bulge, bulge, 1.0)
 
 
 # --- 화면 ---
