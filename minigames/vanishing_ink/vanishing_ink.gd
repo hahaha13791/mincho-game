@@ -8,8 +8,8 @@ const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: IroningConfig = preload("res://minigames/vanishing_ink/ironing_config.tres")
 const PAPER_SIZE: Vector3 = Vector3(4.0, 0.1, 3.0)
 const INNER_SIZE: Vector3 = Vector3(3.5, 0.12, 2.5)
-const IRON_REST_Y: float = 1.6
-const IRON_PRESS_Y: float = 0.45
+const IRON_REST_POS: Vector3 = Vector3(5.0, 1.6, 0.0) # 종이 옆에 치워 두어 기표를 가리지 않는다
+const IRON_PRESS_POS: Vector3 = Vector3(0.0, 0.45, 0.0) # 종이 가운데(기표 위)를 덮는다
 const BETWEEN_TIME: float = 1.2
 const TUTORIAL_TEXT: String = "반민초 표의 기표를 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 기표가 지워진 것입니다. 그 뒤에 마우스를 떼세요.\n테두리가 누레지다 타버리면 들킵니다. 종이마다 타는 속도가 다릅니다.\n한 번 떼면 끝!"
 
@@ -68,7 +68,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mb.pressed and _state == State.READY:
 		_state = State.IRONING
 		_hint.text = "…"
-		_move_iron(IRON_PRESS_Y)
+		_move_iron(IRON_PRESS_POS)
 	elif not mb.pressed and _state == State.IRONING:
 		_release()
 
@@ -88,14 +88,14 @@ func _next_round() -> void:
 	_inner_mat.albedo_color = PALETTE.paper
 	_mark.show()
 	_steam.emitting = false
-	_move_iron(IRON_REST_Y)
+	_move_iron(IRON_REST_POS)
 	$HUD/RoundLabel.text = "%d / %d장" % [_round, CONFIG.rounds]
 	_hint.text = "마우스를 누르고 있으세요"
 	_state = State.READY
 
 
 func _release() -> void:
-	_move_iron(IRON_REST_Y)
+	_move_iron(IRON_REST_POS)
 	if _t < CONFIG.steam_time:
 		_end_round(false, "너무 일찍 뗐다. 기표가 그대로다.", false)
 		return
@@ -110,7 +110,7 @@ func _end_round(ok: bool, msg: String, burned: bool) -> void:
 	if burned:
 		_edge_mat.albedo_color = PALETTE.burnt
 		_inner_mat.albedo_color = PALETTE.burnt
-		_move_iron(IRON_REST_Y)
+		_move_iron(IRON_REST_POS)
 	_hint.text = msg
 	await get_tree().create_timer(BETWEEN_TIME).timeout
 	if _round >= CONFIG.rounds:
@@ -143,11 +143,11 @@ func _show_overlay(text: String, button_text: String, action: Callable) -> void:
 	_overlay.show()
 
 
-func _move_iron(y: float) -> void:
+func _move_iron(pos: Vector3) -> void:
 	if _iron_tween != null:
 		_iron_tween.kill()
 	_iron_tween = create_tween()
-	_iron_tween.tween_property(_iron, "position:y", y, 0.15)
+	_iron_tween.tween_property(_iron, "position", pos, 0.15)
 
 
 # --- 화면 ---
@@ -190,11 +190,11 @@ func _build_visuals() -> void:
 	add_child(inner)
 
 	_mark = _box(Vector3(1.2, 0.02, 0.35), PALETTE.anti_mincho)
-	_mark.position = Vector3(-0.9, INNER_SIZE.y + 0.01, 0.0)
+	_mark.position = Vector3(0.0, INNER_SIZE.y + 0.01, 0.0)
 	add_child(_mark)
 
-	_iron = _box(Vector3(1.6, 0.6, 1.0), PALETTE.iron)
-	_iron.position = Vector3(0.9, IRON_REST_Y, 0.0)
+	_iron = _box(Vector3(INNER_SIZE.x, 0.6, INNER_SIZE.z), PALETTE.iron) # 안쪽 면을 덮고 테두리만 드러남
+	_iron.position = IRON_REST_POS
 	add_child(_iron)
 
 	var steam_mesh: SphereMesh = SphereMesh.new()
@@ -215,5 +215,5 @@ func _build_visuals() -> void:
 	_steam.initial_velocity_max = 2.0
 	_steam.gravity = Vector3.ZERO
 	_steam.emitting = false
-	_steam.position = Vector3(0.9, 0.5, 0.0)
+	_steam.position = Vector3(0.0, 0.8, 0.0)
 	add_child(_steam)
