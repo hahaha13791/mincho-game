@@ -8,3 +8,4 @@ extends Resource
 @export var paper: Color = Color("faf7f0")
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
+@export var ballot_box: Color = Color("5b7fa6")

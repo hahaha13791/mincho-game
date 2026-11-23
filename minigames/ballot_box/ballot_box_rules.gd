@@ -2,7 +2,7 @@ class_name BallotBoxRules
 extends RefCounted
 
 
-## overflow = 표가 선을 넘어 뚜껑이 안 닫힘, margin = 참관인 도착까지 남은 초 (뚜껑을 닫은 순간)
+## 마지막 방문 때 호출. overflow = 표가 선을 넘음, margin = 모든 방문 중 가장 빠듯했던 "닫은 시점 → 도착" 간격(초)
 static func judge(count: int, target: int, overflow: bool, margin: float, safe_margin: float) -> Grade.Rank:
 	if overflow or count < target:
 		return Grade.Rank.CAUGHT

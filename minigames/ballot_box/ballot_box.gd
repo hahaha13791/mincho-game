@@ -11,9 +11,12 @@ const BOX_H: float = 4.0 # 안쪽 높이. 윗면이 선(뚜껑 높이)
 const FLOOR_Y: float = -2.0
 const LINE_Y: float = FLOOR_Y + BOX_H
 const WALL_T: float = 0.4
+const BOX_D: float = 2.5 # 상자 깊이(z)
 const TRAY_POS: Vector3 = Vector3(5.0, 0.0, 0.0)
-const LID_OPEN_Y: float = 4.2
-const LID_CLOSED_Y: float = 2.2
+const LID_T: float = 0.4
+const LID_CLOSED_POS: Vector3 = Vector3(BOX_CENTER_X, LINE_Y + LID_T / 2.0, 0.0) # 벽 윗면에 얹힘
+const LID_OPEN_POS: Vector3 = Vector3(BOX_CENTER_X, LINE_Y + 2.5, -BOX_D) # 뒤로 치워 안쪽을 안 가림
+const LEAVE_TIME: float = 0.5 # 관리인이 돌아가는 시간
 const OBSERVER_FROM_X: float = -10.0
 const OBSERVER_TO_X: float = -6.8
 const KILL_Y: float = -8.0
@@ -26,13 +29,17 @@ const SHAPES: Array = [
 	[Rect2(-0.75, -0.5, 1.5, 1.0)],
 	[Rect2(-0.75, -0.25, 1.5, 0.5), Rect2(-0.75, -0.25, 0.5, 1.25)],
 ]
-const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵쿵 소리가 나면 참관인이 곧 도착합니다. 그 전에 [뚜껑 닫기]!\n목표 장수를 넣고, 선을 넘지 않게 쌓아야 뚜껑이 닫힙니다."
+const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵쿵 소리가 나면 참관인이 곧 도착합니다. 그 전에 [뚜껑 닫기]!\n참관인은 여러 번 옵니다. 뚜껑이 열려 있으면 들킵니다.\n선을 넘게 쌓으면 뚜껑이 닫히지 않고, 마지막 방문 때 목표 장수가 안 되면 들킵니다."
 
 @export var id: StringName = &"ballot_box"
-@export var time_limit: float = 30.0
 @export var target_papers: int = 6
-@export var warn_range: Vector2 = Vector2(12.0, 24.0) # 발소리 시작 시점(초) 범위
+@export var initial_papers: int = 2 # 시작 때 상자 안에 들어 있는 표
+@export var visit_count: int = 3
+@export var first_visit: float = 8.0 # 첫 도착 시각(초)
+@export var visit_gap: float = 8.0 # 방문 간격
+@export var visit_jitter: float = 3.0 # 도착 시각에 더하는 랜덤(0~이 값)
 @export var warn_lead: float = 2.0 # 발소리 → 도착
+@export var stay: float = 2.0 # 도착 후 머무는 시간. 이동안 뚜껑을 못 연다
 @export var safe_margin: float = 1.0 # 도착 전 이 시간 이상 남기고 닫으면 완전범죄
 
 var _papers: Array[BallotPaper] = []
@@ -41,8 +48,12 @@ var _held: BallotPaper
 var _held_offset: Vector3
 var _state: State = State.TUTORIAL
 var _elapsed: float = 0.0
-var _warn_at: float = 0.0
-var _body: MeshInstance3D
+var _visits: Array[float] = [] # 도착 시각
+var _next_visit: int = 0
+var _lid_closed: bool = false
+var _closed_at: float = 0.0
+var _min_margin: float = INF
+var _lid_tween: Tween
 var _lid: MeshInstance3D
 var _observer: MeshInstance3D
 var _action: Callable
@@ -56,6 +67,9 @@ var _action: Callable
 func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-35.0, 20.0, 0.0)
 	_build_visuals()
+	for i in initial_papers: # 상자 안에 미리 들어 있는 표. 시작 전에 물리로 자리잡는다
+		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + 1.0 + i * 1.6, 0.0))
+		p.set_waiting(false)
 	$HUD/CloseButton.pressed.connect(_on_close_pressed)
 	_action_button.pressed.connect(func() -> void: _action.call())
 	_show_overlay(TUTORIAL_TEXT, "시작", _start)
@@ -65,16 +79,38 @@ func _process(delta: float) -> void:
 	if _state != State.PLAYING:
 		return
 	_elapsed += delta
-	$HUD/TimerLabel.text = "%.1f" % maxf(time_limit - _elapsed, 0.0)
+	var end_at: float = _visits[-1] + stay
+	$HUD/TimerLabel.text = "%.1f" % maxf(end_at - _elapsed, 0.0)
 	_refresh()
-	if _elapsed >= _warn_at:
-		$HUD/AlertLabel.visible = true
-		var t: float = clampf((_elapsed - _warn_at) / warn_lead, 0.0, 1.0)
-		_observer.position.x = lerpf(OBSERVER_FROM_X, OBSERVER_TO_X, t)
-	if _elapsed >= _warn_at + warn_lead:
-		_end(Grade.Rank.CAUGHT, "참관인이 뚜껑을 열었다. 표가 우르르 쏟아졌다.", false)
-	elif _elapsed >= time_limit:
-		_end(Grade.Rank.CAUGHT, "시간 초과. 참관인이 슬쩍 들여다봤다.", false)
+	_move_observer()
+	if _next_visit < _visits.size() and _elapsed >= _visits[_next_visit]:
+		if not _lid_closed:
+			_end(Grade.Rank.CAUGHT, "참관인이 열린 투표함을 들여다봤다. 표가 우르르 쏟아졌다.", false)
+			return
+		_min_margin = minf(_min_margin, _visits[_next_visit] - _closed_at)
+		_next_visit += 1
+	if _elapsed >= end_at:
+		_finish()
+
+
+# 모든 방문 시각에 대해 관리인 위치와 발소리 표시를 갱신한다
+func _move_observer() -> void:
+	var x: float = OBSERVER_FROM_X
+	var warning: bool = false
+	for a in _visits:
+		var t: float = _elapsed - (a - warn_lead)
+		if t >= 0.0 and t < warn_lead + stay + LEAVE_TIME:
+			x = lerpf(OBSERVER_FROM_X, OBSERVER_TO_X, clampf(t / warn_lead, 0.0, 1.0) - clampf((t - warn_lead - stay) / LEAVE_TIME, 0.0, 1.0))
+			warning = t < warn_lead
+	_observer.position.x = x
+	$HUD/AlertLabel.visible = warning
+
+
+func _is_visiting() -> bool:
+	for a in _visits:
+		if _elapsed >= a and _elapsed < a + stay:
+			return true
+	return false
 
 
 func _physics_process(_delta: float) -> void:
@@ -90,7 +126,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _state != State.PLAYING:
+	if _state != State.PLAYING or _lid_closed:
 		return
 	if event is InputEventMouseButton:
 		var mb: InputEventMouseButton = event
@@ -105,46 +141,66 @@ func _start() -> void:
 	_overlay.hide()
 	_state = State.PLAYING
 	_elapsed = 0.0
-	_warn_at = randf_range(warn_range.x, warn_range.y)
+	_visits.clear()
+	for i in visit_count:
+		_visits.append(first_visit + i * visit_gap + randf_range(0.0, visit_jitter))
 	_spawn_tray_paper()
 	_refresh()
 
 
+# 뚜껑 토글. 선을 넘었으면 닫히지 않고, 관리인이 머무는 동안은 열 수 없다
 func _on_close_pressed() -> void:
 	if _state != State.PLAYING:
 		return
+	if _lid_closed:
+		if _is_visiting():
+			return
+		_set_lid(false)
+		return
+	if _overflows(_in_box()):
+		return # 선 넘음 표시는 FillLabel에 이미 나온다
 	if _held != null:
 		_drop()
+	_closed_at = _elapsed
+	_set_lid(true)
+
+
+func _set_lid(closed: bool) -> void:
+	_lid_closed = closed
+	$HUD/CloseButton.text = "뚜껑 열기" if closed else "뚜껑 닫기"
+	if _lid_tween != null:
+		_lid_tween.kill()
+	_lid_tween = create_tween()
+	_lid_tween.tween_property(_lid, "position", LID_CLOSED_POS if closed else LID_OPEN_POS, 0.25)
+
+
+# 마지막 방문이 끝났을 때: 뚜껑은 닫혀 있고, 장수가 목표를 채웠는지 본다
+func _finish() -> void:
 	var inside: Array[BallotPaper] = _in_box()
-	var overflow: bool = _overflows(inside)
-	var margin: float = _warn_at + warn_lead - _elapsed
-	var rank: Grade.Rank = BallotBoxRules.judge(inside.size(), target_papers, overflow, margin, safe_margin)
+	var rank: Grade.Rank = BallotBoxRules.judge(inside.size(), target_papers, false, _min_margin, safe_margin)
 	var msg: String
-	if overflow:
-		msg = "표가 선을 넘었다. 뚜껑이 닫히지 않는다. 참관인이 빙긋 웃는다."
-	else:
-		match rank:
-			Grade.Rank.PERFECT:
-				msg = "참관인은 아무것도 눈치채지 못했다. 투표함이 조금 배불렀을 뿐."
-			Grade.Rank.SUCCESS:
-				msg = "아슬아슬! 뚜껑이 닫히는 순간 참관인이 들어왔다."
-			_:
-				msg = "투표함이 너무 홀쭉하다. 참관인이 고개를 갸웃한다."
-	_end(rank, msg, not overflow)
+	match rank:
+		Grade.Rank.PERFECT:
+			msg = "참관인은 아무것도 눈치채지 못했다. 투표함이 조금 배불렀을 뿐."
+		Grade.Rank.SUCCESS:
+			msg = "아슬아슬! 뚜껑이 닫히는 순간 참관인이 들어왔다."
+		_:
+			msg = "투표함이 너무 홀쭉하다. 참관인이 고개를 갸웃한다."
+	_end(rank, msg, true)
 
 
 func _end(rank: Grade.Rank, msg: String, close_lid: bool) -> void:
 	if _state == State.ENDED:
 		return
 	_state = State.ENDED
+	$HUD/AlertLabel.visible = false
 	if _held != null:
 		_drop()
 	var before: float = GameState.mincho_percent
 	GameState.submit_result(id, rank)
-	if close_lid:
-		var tw: Tween = create_tween()
-		tw.tween_property(_lid, "position:y", LID_CLOSED_Y, 0.25)
-		await tw.finished
+	if close_lid and not _lid_closed:
+		_set_lid(true)
+		await _lid_tween.finished
 	_show_overlay("%s\n%s\n민초 %.1f%% → %.1f%%" % [Grade.NAMES[rank], msg, before, GameState.mincho_percent], "다시하기 (임시)", _restart)
 
 
@@ -163,14 +219,18 @@ func _show_overlay(text: String, button_text: String, action: Callable) -> void:
 
 # --- 표 ---
 
-func _spawn_tray_paper() -> void:
+func _make_paper(pos: Vector3) -> BallotPaper:
 	var p: BallotPaper = BallotPaper.new()
 	p.setup(SHAPES.pick_random(), PALETTE.mincho)
-	p.set_waiting(true) # 집기 전까지 위치 고정, 물리 없음
-	p.position = TRAY_POS
+	p.position = pos
 	add_child(p)
 	_papers.append(p)
-	_tray = p
+	return p
+
+
+func _spawn_tray_paper() -> void:
+	_tray = _make_paper(TRAY_POS)
+	_tray.set_waiting(true) # 집기 전까지 위치 고정, 물리 없음
 
 
 func _try_pick(point: Vector3) -> void:
@@ -233,14 +293,14 @@ func _box(size: Vector3, color: Color) -> MeshInstance3D:
 	return m
 
 
-func _wall(size: Vector3, pos: Vector3) -> void:
+func _wall(size: Vector3, pos: Vector3, color: Color) -> void:
 	var body: StaticBody3D = StaticBody3D.new()
 	var col: CollisionShape3D = CollisionShape3D.new()
 	var shape: BoxShape3D = BoxShape3D.new()
 	shape.size = size
 	col.shape = shape
 	body.add_child(col)
-	body.add_child(_box(size, PALETTE.anti_mincho))
+	body.add_child(_box(size, color))
 	body.position = pos
 	add_child(body)
 
@@ -259,20 +319,22 @@ func _build_visuals() -> void:
 
 	var mid_y: float = FLOOR_Y + BOX_H / 2.0
 	var side_x: float = BOX_W / 2.0 + WALL_T / 2.0
-	_wall(Vector3(WALL_T, BOX_H, 1.0), Vector3(BOX_CENTER_X - side_x, mid_y, 0.0))
-	_wall(Vector3(WALL_T, BOX_H, 1.0), Vector3(BOX_CENTER_X + side_x, mid_y, 0.0))
-	_wall(Vector3(BOX_W + 2.0 * WALL_T, WALL_T, 1.0), Vector3(BOX_CENTER_X, FLOOR_Y - WALL_T / 2.0, 0.0))
+	var box_color: Color = PALETTE.ballot_box
+	_wall(Vector3(WALL_T, BOX_H, BOX_D), Vector3(BOX_CENTER_X - side_x, mid_y, 0.0), box_color)
+	_wall(Vector3(WALL_T, BOX_H, BOX_D), Vector3(BOX_CENTER_X + side_x, mid_y, 0.0), box_color)
+	_wall(Vector3(BOX_W + 2.0 * WALL_T, WALL_T, BOX_D), Vector3(BOX_CENTER_X, FLOOR_Y - WALL_T / 2.0, 0.0), box_color)
 
-	_body = _box(Vector3(BOX_W, BOX_H, 0.2), PALETTE.anti_mincho.darkened(0.3))
-	_body.position = Vector3(BOX_CENTER_X, mid_y, -0.4)
-	add_child(_body)
+	var back: MeshInstance3D = _box(Vector3(BOX_W, BOX_H, 0.2), box_color.darkened(0.3))
+	back.position = Vector3(BOX_CENTER_X, mid_y, -BOX_D / 2.0 + 0.1)
+	add_child(back)
 
 	var line: MeshInstance3D = _box(Vector3(BOX_W + 2.0 * WALL_T, 0.06, 0.05), PALETTE.danger)
 	line.position = Vector3(BOX_CENTER_X, LINE_Y, 0.4)
 	add_child(line)
 
-	_lid = _box(Vector3(BOX_W + 0.6, 0.4, 1.0), PALETTE.paper)
-	_lid.position = Vector3(BOX_CENTER_X, LID_OPEN_Y, 1.2)
+	# 뚜껑은 벽 윗면과 같은 크기(폭·깊이)라 닫히면 딱 맞물린다
+	_lid = _box(Vector3(BOX_W + 2.0 * WALL_T, LID_T, BOX_D), box_color.lightened(0.25))
+	_lid.position = LID_OPEN_POS
 	add_child(_lid)
 
 	_observer = _box(Vector3(1.0, 2.0, 1.0), PALETTE.danger)
