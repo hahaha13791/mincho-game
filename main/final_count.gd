@@ -42,12 +42,22 @@ func _ready() -> void:
 	box.add_child(_hidden(_label(_detail(), 28)))
 	if FinalRules.is_special(ranks):
 		box.add_child(_hidden(_label(SPECIAL_TEXT, 36)))
+	var buttons: HBoxContainer = HBoxContainer.new()
+	buttons.alignment = BoxContainer.ALIGNMENT_CENTER
+	buttons.add_theme_constant_override("separation", 16)
+	var register: Button = Button.new()
+	register.text = "리더보드에 등록"
+	register.pressed.connect(func() -> void:
+		register.disabled = true # 연타로 두 번 등록되지 않게
+		_register(ranks, percent))
 	var again: Button = Button.new()
-	again.text = "처음부터"
+	again.text = "등록하지 않고 처음부터"
 	again.pressed.connect(func() -> void:
 		GameState.reset()
 		Flow.go_hub())
-	box.add_child(_hidden(again))
+	buttons.add_child(register)
+	buttons.add_child(again)
+	box.add_child(_hidden(buttons))
 
 	await _play(GameState.config.start_mincho_percent, percent)
 
@@ -61,6 +71,17 @@ func _play(from_percent: float, to_percent: float) -> void:
 	for c in _reveal:
 		await get_tree().create_timer(0.7).timeout
 		c.show()
+
+
+# 리더보드에 등록하고 새 방문자를 위해 득표와 등급을 초기화한다
+func _register(ranks: Array, percent: float) -> void:
+	var entries: Array[Dictionary] = Leaderboard.load_all()
+	var entry: Dictionary = Leaderboard.add(entries, GameState.total_score(), percent, FinalRules.title(ranks, percent), ranks, int(Time.get_unix_time_from_system()))
+	if not Leaderboard.save(entries):
+		push_error("리더보드를 저장하지 못했다: " + Leaderboard.PATH)
+	Leaderboard.highlight_id = entry["id"]
+	GameState.reset()
+	Flow.go_leaderboard()
 
 
 func _show_percent(p: float) -> void:

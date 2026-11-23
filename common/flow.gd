@@ -3,6 +3,7 @@ extends Node
 
 const HUB_SCENE: String = "res://main/hub.tscn"
 const FINAL_SCENE: String = "res://main/final_count.tscn"
+const LEADERBOARD_SCENE: String = "res://main/leaderboard.tscn"
 
 
 func go_hub() -> void:
@@ -17,3 +18,7 @@ func start(entry: MinigameEntry) -> void:
 
 func go_final() -> void:
 	get_tree().change_scene_to_file(FINAL_SCENE)
+
+
+func go_leaderboard() -> void:
+	get_tree().change_scene_to_file(LEADERBOARD_SCENE)

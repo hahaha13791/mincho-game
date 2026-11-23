@@ -47,6 +47,11 @@ func _ready() -> void:
 		var slot: int = i if i < CENTER_INDEX else i - 1
 		grid.add_child(_card(LIST.entries[slot] if slot < LIST.entries.size() else null))
 
+	var board: Button = Button.new()
+	board.text = "리더보드"
+	board.pressed.connect(Flow.go_leaderboard)
+	box.add_child(board)
+
 	# shortcut: 테스트용 버튼들. 타이틀과 리더보드가 생기면 제거
 	var tools: HBoxContainer = HBoxContainer.new()
 	tools.alignment = BoxContainer.ALIGNMENT_CENTER
