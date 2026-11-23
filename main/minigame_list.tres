@@ -18,6 +18,7 @@ display_name = "피아노표"
 script = ExtResource("2")
 id = &"sandwich_ballot"
 display_name = "샌드위치표"
+scene = "res://minigames/sandwich_ballot/sandwich_ballot.tscn"
 
 [sub_resource type="Resource" id="e5"]
 script = ExtResource("2")

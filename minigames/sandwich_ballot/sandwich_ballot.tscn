@@ -1,0 +1,98 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://minigames/sandwich_ballot/sandwich_ballot.gd" id="1"]
+
+[node name="SandwichBallot" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+projection = 1
+current = true
+size = 10.0
+far = 50.0
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+shadow_enabled = true
+shadow_opacity = 0.4
+
+[node name="Stack" type="Node3D" parent="."]
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="RoundLabel" type="Label" parent="HUD"]
+offset_left = 40.0
+offset_top = 30.0
+offset_right = 400.0
+offset_bottom = 80.0
+
+[node name="SheetLabel" type="Label" parent="HUD"]
+offset_left = 40.0
+offset_top = 80.0
+offset_right = 400.0
+offset_bottom = 130.0
+
+[node name="HintLabel" type="Label" parent="HUD"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -500.0
+offset_top = 30.0
+offset_right = 500.0
+offset_bottom = 110.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+
+[node name="Buttons" type="VBoxContainer" parent="HUD"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -260.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/separation = 20
+
+[node name="HitButton" type="Button" parent="HUD/Buttons"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+text = "쌓기"
+
+[node name="StandButton" type="Button" parent="HUD/Buttons"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+text = "닫기"
+
+[node name="Overlay" type="ColorRect" parent="HUD"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Center" type="CenterContainer" parent="HUD/Overlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Box" type="VBoxContainer" parent="HUD/Overlay/Center"]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="Message" type="Label" parent="HUD/Overlay/Center/Box"]
+custom_minimum_size = Vector2(900, 0)
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Action" type="Button" parent="HUD/Overlay/Center/Box"]
+layout_mode = 2
+text = "시작"
