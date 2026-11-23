@@ -67,15 +67,15 @@ func _card(entry: MinigameEntry) -> Button:
 	return b
 
 
-# shortcut: 개표 당일 화면이 아직 없어 열려도 누를 수 없다. 최종 개표를 만들 때 pressed에 연결
 func _final_card(done: int) -> Button:
 	var b: Button = Button.new()
 	b.custom_minimum_size = CARD_SIZE
-	b.disabled = true
 	if done >= GameState.MINIGAME_COUNT:
 		b.text = "개표 당일
-(준비 중)"
+개표를 시작한다"
+		b.pressed.connect(Flow.go_final)
 	else:
 		b.text = "개표 당일
 작전 %d개를 모두 끝내면 열린다" % GameState.MINIGAME_COUNT
+		b.disabled = true
 	return b
