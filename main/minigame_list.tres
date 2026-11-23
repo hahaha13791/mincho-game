@@ -13,6 +13,7 @@ scene = "res://minigames/ballot_box/ballot_box.tscn"
 script = ExtResource("2")
 id = &"piano_ballot"
 display_name = "피아노표"
+scene = "res://minigames/piano_ballot/piano_ballot.tscn"
 
 [sub_resource type="Resource" id="e4"]
 script = ExtResource("2")
