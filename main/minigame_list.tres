@@ -37,6 +37,7 @@ scene = "res://minigames/vanishing_ink/vanishing_ink.tscn"
 script = ExtResource("2")
 id = &"tally_board"
 display_name = "다그닥-바와스"
+scene = "res://minigames/tally_board/tally_board.tscn"
 
 [sub_resource type="Resource" id="e9"]
 script = ExtResource("2")
