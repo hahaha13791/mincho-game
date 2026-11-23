@@ -25,6 +25,7 @@ scene = "res://minigames/sandwich_ballot/sandwich_ballot.tscn"
 script = ExtResource("2")
 id = &"owl_ballot"
 display_name = "올빼미표"
+scene = "res://minigames/owl_ballot/owl_ballot.tscn"
 
 [sub_resource type="Resource" id="e6"]
 script = ExtResource("2")

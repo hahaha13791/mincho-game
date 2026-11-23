@@ -6,7 +6,7 @@ enum State { TUTORIAL, PLAYING, ENDED }
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: PianoConfig = preload("res://minigames/piano_ballot/piano_config.tres")
-const WATCHER: PackedScene = preload("res://minigames/piano_ballot/watcher.tscn")
+const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const SPACING: float = 2.0 # 박자당 표 사이 거리
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
