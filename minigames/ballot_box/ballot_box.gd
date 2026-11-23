@@ -201,13 +201,7 @@ func _end(rank: Grade.Rank, msg: String, close_lid: bool) -> void:
 	if close_lid and not _lid_closed:
 		_set_lid(true)
 		await _lid_tween.finished
-	_show_overlay("%s\n%s\n민초 %.1f%% → %.1f%%" % [Grade.NAMES[rank], msg, before, GameState.mincho_percent], "다시하기 (임시)", _restart)
-
-
-# shortcut: 허브가 없어 결과 후 전체 초기화 + 재시작, 허브 단계에서 Flow.go_hub로 교체
-func _restart() -> void:
-	GameState.reset()
-	get_tree().reload_current_scene()
+	ResultScreen.open(self, rank, msg, before)
 
 
 func _show_overlay(text: String, button_text: String, action: Callable) -> void:

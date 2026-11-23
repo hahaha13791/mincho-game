@@ -12,11 +12,13 @@ config_version=5
 
 config/name="mincho-game"
 config/features=PackedStringArray("4.7", "Forward Plus")
+run/main_scene="res://main/hub.tscn"
 config/icon="res://icon.svg"
 
 [autoload]
 
 GameState="*res://common/game_state.gd"
+Flow="*res://common/flow.gd"
 
 [display]
 

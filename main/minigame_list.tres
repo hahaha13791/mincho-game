@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="MinigameList" format=3]
+
+[ext_resource type="Script" path="res://main/minigame_list.gd" id="1"]
+[ext_resource type="Script" path="res://main/minigame_entry.gd" id="2"]
+
+[sub_resource type="Resource" id="e1"]
+script = ExtResource("2")
+id = &"ballot_box"
+display_name = "임신한 투표함"
+scene = "res://minigames/ballot_box/ballot_box.tscn"
+
+[sub_resource type="Resource" id="e2"]
+script = ExtResource("2")
+id = &"piano_ballot"
+display_name = "피아노표"
+
+[sub_resource type="Resource" id="e4"]
+script = ExtResource("2")
+id = &"sandwich_ballot"
+display_name = "샌드위치표"
+
+[sub_resource type="Resource" id="e5"]
+script = ExtResource("2")
+id = &"owl_ballot"
+display_name = "올빼미표"
+
+[sub_resource type="Resource" id="e6"]
+script = ExtResource("2")
+id = &"vanishing_ink"
+display_name = "사라지는 잉크"
+
+[sub_resource type="Resource" id="e8"]
+script = ExtResource("2")
+id = &"tally_board"
+display_name = "다그닥-바와스"
+
+[sub_resource type="Resource" id="e9"]
+script = ExtResource("2")
+id = &"mad_rat"
+display_name = "미친 쥐"
+
+[resource]
+script = ExtResource("1")
+entries = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e4"), SubResource("e5"), SubResource("e6"), SubResource("e8"), SubResource("e9")])
