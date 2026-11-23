@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 GameState="*res://common/game_state.gd"
 Flow="*res://common/flow.gd"
+IdleReturn="*res://common/idle_return.gd"
 
 [display]
 
