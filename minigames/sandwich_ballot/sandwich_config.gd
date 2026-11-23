@@ -4,8 +4,8 @@ extends Resource
 
 @export var rounds: int = 3 ## 만드는 다발 수
 @export var need_success: int = 2 ## 이 수 이상 성공해야 미션성공 이상
-@export var sheets_per_bundle: int = 5
-@export var bust_limit: int = 100 ## 이 장수를 넘기면 버스트
-@export var mincho_ratio: float = 0.3 ## 새 묶음이 민초일 확률
-@export var gain_target: int = 30 ## 다발 하나가 성공하려면 민초로 바뀌는 반민초 표가 이만큼 필요
-@export var perfect_sheets: int = 80 ## 모든 다발이 성공하고 전부 이 장수 이상이면 완전범죄
+@export var add_min: int = 5 ## 쌓기 한 번에 반민초 표가 늘어나는 장수 범위 (화면에 공개)
+@export var add_max: int = 15
+@export var bust_limit: int = 100 ## 반민초 표가 이 장수를 넘으면 버스트
+@export var gain_target: int = 50 ## 다발 하나가 성공하려면 필요한 반민초 표 장수
+@export var perfect_sheets: int = 85 ## 모든 다발이 성공하고 전부 이 장수 이상이면 완전범죄

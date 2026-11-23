@@ -1,22 +1,14 @@
 class_name SandwichRules
 extends RefCounted
 
-enum Outcome { OK, BUST, BAD_ENDS, LOW_GAIN }
+enum Outcome { OK, BUST, LOW_GAIN }
 
 
-## bundles: 아래→위 순서, true = 민초 묶음. 맨 위·맨 아래가 민초일 때만 가운데 반민초 표가 민초로 바뀐다
-static func gain(bundles: Array[bool], per: int) -> int:
-	if bundles.is_empty() or not (bundles[0] and bundles[-1]):
-		return 0
-	return bundles.count(false) * per
-
-
-static func evaluate(bundles: Array[bool], per: int, bust_limit: int, gain_target: int) -> Outcome:
-	if bundles.size() * per > bust_limit:
+## sheets = 가운데에 쌓은 반민초 표 장수. 위·아래 민초 묶음은 항상 확정이고 장수에 넣지 않는다
+static func evaluate(sheets: int, bust_limit: int, gain_target: int) -> Outcome:
+	if sheets > bust_limit:
 		return Outcome.BUST
-	if bundles.is_empty() or not (bundles[0] and bundles[-1]):
-		return Outcome.BAD_ENDS
-	return Outcome.OK if gain(bundles, per) >= gain_target else Outcome.LOW_GAIN
+	return Outcome.OK if sheets >= gain_target else Outcome.LOW_GAIN
 
 
 ## successes = 성공한 다발 수, min_sheets = 성공한 다발 중 가장 얇았던 장수
