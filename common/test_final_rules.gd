@@ -27,7 +27,7 @@ func _init() -> void:
 	_check(not FinalRules.is_special([]), "빈 목록은 추가 이벤트 아님")
 	_check(FinalRules.title(_ranks(7, 0, 0), 79.0) == "그림자 민초단장", "전부 완전범죄")
 	_check(FinalRules.title(_ranks(0, 0, 7), 9.0) == "민초의 수치, 즉시 제명", "전부 적발")
-	_check(FinalRules.title(_ranks(4, 0, 3), 55.0) == "운 좋은 행동대장", "적발 많은데 이김")
+	_check(FinalRules.title(_ranks(5, 0, 2), 59.0) == "운 좋은 행동대장", "적발 많은데 이김")
 	_check(FinalRules.title(_ranks(5, 2, 0), 67.0) == "소리 없는 민초 참모", "적발 없고 완전범죄 다수")
 	_check(FinalRules.title(_ranks(0, 7, 0), 54.5) == "동네 민초 대장", "무난하게 이김")
 	_check(FinalRules.title(_ranks(0, 6, 1), 48.0) == "한 끗 모자란 민초단원", "아깝게 짐")

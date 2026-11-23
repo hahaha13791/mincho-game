@@ -23,7 +23,7 @@ static func title(ranks: Array, percent: float) -> String:
 		return "그림자 민초단장"
 	if not ranks.is_empty() and caught == ranks.size():
 		return "민초의 수치, 즉시 제명"
-	if win and caught >= 3:
+	if win and caught >= 2:
 		return "운 좋은 행동대장"
 	if win and caught == 0 and perfect >= 4:
 		return "소리 없는 민초 참모"
