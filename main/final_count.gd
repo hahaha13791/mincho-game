@@ -54,7 +54,7 @@ func _ready() -> void:
 	again.text = "등록하지 않고 처음부터"
 	again.pressed.connect(func() -> void:
 		GameState.reset()
-		Flow.go_hub())
+		Flow.go_title())
 	buttons.add_child(register)
 	buttons.add_child(again)
 	box.add_child(_hidden(buttons))

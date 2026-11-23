@@ -1,9 +1,14 @@
 extends Node
 ## 오토로드 `Flow`. 화면 전환 담당. 미니게임은 끝나면 go_hub()만 호출한다.
 
+const TITLE_SCENE: String = "res://main/title.tscn"
 const HUB_SCENE: String = "res://main/hub.tscn"
 const FINAL_SCENE: String = "res://main/final_count.tscn"
 const LEADERBOARD_SCENE: String = "res://main/leaderboard.tscn"
+
+
+func go_title() -> void:
+	get_tree().change_scene_to_file(TITLE_SCENE)
 
 
 func go_hub() -> void:
