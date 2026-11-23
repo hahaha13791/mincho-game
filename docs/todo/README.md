@@ -6,3 +6,4 @@
 |---|---|
 | ballot-box.md | 1번 미니게임 (임신한 투표함, id `ballot_box`) |
 | hub.md | 공통 흐름 (결과 화면, 화면 전환, 임시 선택 화면) |
+| tally-board.md | 8번 미니게임 (다그닥-바와스, id `tally_board`). 임시안 구현됨, 재설계 후보 기록 |
