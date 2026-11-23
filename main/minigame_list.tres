@@ -28,6 +28,7 @@ display_name = "올빼미표"
 script = ExtResource("2")
 id = &"vanishing_ink"
 display_name = "사라지는 잉크"
+scene = "res://minigames/vanishing_ink/vanishing_ink.tscn"
 
 [sub_resource type="Resource" id="e8"]
 script = ExtResource("2")

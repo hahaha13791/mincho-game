@@ -9,3 +9,6 @@ extends Resource
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")
+@export var scorch: Color = Color("d9b84a") # 종이 테두리가 누레진 색
+@export var burnt: Color = Color("2b2118")
+@export var iron: Color = Color("8a8f98")
