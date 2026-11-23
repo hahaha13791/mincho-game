@@ -24,16 +24,12 @@ var _t: float = 0.0
 var _next_resolve: int = 0
 var _mistakes: int = 0
 var _warn_until: float = -1.0
-var _action: Callable
 var _sfx: AudioStreamPlayer
 var _stamper: MeshInstance3D
 var _watcher: Watcher
 var _stamp_tween: Tween
 
 @onready var _camera: Camera3D = $Camera3D
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 @onready var _warn: Label = $HUD/WarnLabel
 
@@ -46,12 +42,10 @@ func _ready() -> void:
 	_sfx = AudioStreamPlayer.new()
 	add_child(_sfx)
 	_build_visuals()
-	_action_button.pressed.connect(func() -> void: _action.call())
-	_show_overlay(TUTORIAL_TEXT, "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
 
 func _start() -> void:
-	_overlay.hide()
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	_beats = PianoRules.build(CONFIG, rng)
@@ -146,13 +140,6 @@ func _finish(caught: bool, msg: String) -> void:
 
 func _refresh() -> void:
 	$HUD/MistakeLabel.text = "실수 %d" % _mistakes
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 func _press_stamper() -> void:

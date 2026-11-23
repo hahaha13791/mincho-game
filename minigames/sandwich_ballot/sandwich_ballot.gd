@@ -21,13 +21,9 @@ var _successes: int = 0
 var _min_sheets: int = 1 << 30
 var _sheets: int = 0 # 가운데 반민초 표 장수
 var _top_y: float # 다음 묶음이 놓일 아래 면 높이
-var _action: Callable
 
 @onready var _camera: Camera3D = $Camera3D
 @onready var _stack: Node3D = $Stack
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 @onready var _hit_button: Button = $HUD/Buttons/HitButton
 @onready var _stand_button: Button = $HUD/Buttons/StandButton
@@ -37,14 +33,12 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(5.0, 5.0, 10.0), Vector3(0.0, 0.5, 0.0))
 	_build_visuals()
-	_action_button.pressed.connect(func() -> void: _action.call())
 	_hit_button.pressed.connect(_on_hit)
 	_stand_button.pressed.connect(_on_stand)
-	_show_overlay(TUTORIAL_TEXT % [CONFIG.add_min, CONFIG.add_max, CONFIG.gain_target, CONFIG.bust_limit], "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT % [CONFIG.add_min, CONFIG.add_max, CONFIG.gain_target, CONFIG.bust_limit], _start)
 
 
 func _start() -> void:
-	_overlay.hide()
 	_round = 0
 	_next_round()
 
@@ -121,13 +115,6 @@ func _refresh() -> void:
 	var playing: bool = _state == State.PLAYING
 	_hit_button.disabled = not playing
 	_stand_button.disabled = not playing
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 # --- 화면 ---

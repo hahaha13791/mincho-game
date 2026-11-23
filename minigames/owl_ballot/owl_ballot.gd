@@ -21,7 +21,6 @@ var _moving: bool = false
 var _step_acc: float = 0.0
 var _done: Array[bool] = []
 var _near_missed: bool = false
-var _action: Callable
 var _env: Environment
 var _pawn: MeshInstance3D
 var _box_meshes: Array[MeshInstance3D] = []
@@ -30,9 +29,6 @@ var _watchers: Array[Watcher] = []
 
 @onready var _camera: Camera3D = $Camera3D
 @onready var _props: Node3D = $Props
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 
 
@@ -40,12 +36,10 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-60.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 11.0, 6.0), Vector3.ZERO)
 	_build_visuals()
-	_action_button.pressed.connect(func() -> void: _action.call())
-	_show_overlay(TUTORIAL_TEXT, "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
 
 func _start() -> void:
-	_overlay.hide()
 	_cell = OwlLevel.START
 	_pawn.position = _pawn_pos(_cell)
 	_done.resize(OwlLevel.BOXES.size())
@@ -167,13 +161,6 @@ func _finish(ok: bool, msg: String) -> void:
 	var before: float = GameState.mincho_percent
 	GameState.submit_result(id, rank)
 	ResultScreen.open(self, rank, msg, before)
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 func _world(c: Vector2i) -> Vector3:

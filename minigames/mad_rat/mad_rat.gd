@@ -19,13 +19,9 @@ var _spawned: int = 0
 var _wrong: int = 0
 var _next_spawn: float = 0.0
 var _queue: Array[Villager] = [] # 갈림길에 가까운 주민이 앞(0번)
-var _action: Callable
 
 @onready var _camera: Camera3D = $Camera3D
 @onready var _villagers: Node3D = $Villagers
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 
 
@@ -33,10 +29,9 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 9.0, 8.0), Vector3(0.0, 0.0, -2.0))
 	_build_visuals()
-	_action_button.pressed.connect(func() -> void: _action.call())
 	$HUD/LeftButton.pressed.connect(_send.bind(MadRatRules.Dir.LEFT))
 	$HUD/RightButton.pressed.connect(_send.bind(MadRatRules.Dir.RIGHT))
-	_show_overlay(TUTORIAL_TEXT, "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -62,7 +57,6 @@ func _process(delta: float) -> void:
 
 
 func _start() -> void:
-	_overlay.hide()
 	_state = State.PLAYING
 	_refresh()
 
@@ -115,13 +109,6 @@ func _finish() -> void:
 
 func _refresh() -> void:
 	$HUD/ProgressLabel.text = "%d / %d명  실수 %d" % [_spawned, CONFIG.villager_count, _wrong]
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 # --- 화면 ---

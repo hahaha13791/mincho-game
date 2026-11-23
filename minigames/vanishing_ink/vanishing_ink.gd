@@ -22,7 +22,6 @@ var _min_margin: float = INF
 var _t: float = 0.0
 var _burn_at: float = 0.0
 var _steamed: bool = false
-var _action: Callable
 var _edge_mat: StandardMaterial3D
 var _inner_mat: StandardMaterial3D
 var _mark: MeshInstance3D
@@ -31,9 +30,6 @@ var _steam: CPUParticles3D
 var _iron_tween: Tween
 
 @onready var _camera: Camera3D = $Camera3D
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 
 
@@ -41,8 +37,7 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 7.0, 7.0), Vector3.ZERO)
 	_build_visuals()
-	_action_button.pressed.connect(func() -> void: _action.call())
-	_show_overlay(TUTORIAL_TEXT, "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -74,7 +69,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start() -> void:
-	_overlay.hide()
 	_round = 0
 	_next_round()
 
@@ -134,13 +128,6 @@ func _finish() -> void:
 	var before: float = GameState.mincho_percent
 	GameState.submit_result(id, rank)
 	ResultScreen.open(self, rank, msg, before)
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 func _move_iron(pos: Vector3) -> void:

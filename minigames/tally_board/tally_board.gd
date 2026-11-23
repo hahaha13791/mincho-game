@@ -18,24 +18,18 @@ var _orig: Dictionary = {} # 칸 id -> 원래 값
 var _val: Dictionary = {} # 칸 id -> 현재 값
 var _labels: Dictionary = {} # 칸 id -> Label
 var _best: int
-var _action: Callable
 
 @onready var _board: GridContainer = $HUD/Board
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 @onready var _hint: Label = $HUD/HintLabel
 
 
 func _ready() -> void:
 	$HUD/Bg.color = PALETTE.background
 	$HUD/SubmitButton.pressed.connect(_submit)
-	_action_button.pressed.connect(func() -> void: _action.call())
-	_show_overlay(TUTORIAL_TEXT % [CONFIG.cell_budget, roundi(CONFIG.cap_ratio * 100.0)], "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT % [CONFIG.cell_budget, roundi(CONFIG.cap_ratio * 100.0)], _start)
 
 
 func _start() -> void:
-	_overlay.hide()
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	var b: Dictionary = TallyRules.make_board(CONFIG, rng)
@@ -139,13 +133,6 @@ func _refresh() -> void:
 		_labels[c].add_theme_color_override("font_color", PALETTE.danger if diff != 0 else PALETTE.anti_mincho.darkened(0.5))
 	$HUD/BudgetLabel.text = "고친 칸 %d / %d" % [_changed_count(), CONFIG.cell_budget]
 	$HUD/TimerLabel.text = "%.1f" % maxf(_t_left, 0.0)
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 # --- 화면 ---

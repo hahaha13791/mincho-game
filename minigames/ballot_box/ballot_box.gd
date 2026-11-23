@@ -56,12 +56,8 @@ var _min_margin: float = INF
 var _lid_tween: Tween
 var _lid: MeshInstance3D
 var _observer: MeshInstance3D
-var _action: Callable
 
 @onready var _camera: Camera3D = $Camera3D
-@onready var _overlay: Control = $HUD/Overlay
-@onready var _message: Label = $HUD/Overlay/Center/Box/Message
-@onready var _action_button: Button = $HUD/Overlay/Center/Box/Action
 
 
 func _ready() -> void:
@@ -71,8 +67,7 @@ func _ready() -> void:
 		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + 1.0 + i * 1.6, 0.0))
 		p.set_waiting(false)
 	$HUD/CloseButton.pressed.connect(_on_close_pressed)
-	_action_button.pressed.connect(func() -> void: _action.call())
-	_show_overlay(TUTORIAL_TEXT, "시작", _start)
+	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -138,7 +133,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _start() -> void:
-	_overlay.hide()
 	_state = State.PLAYING
 	_elapsed = 0.0
 	_visits.clear()
@@ -202,13 +196,6 @@ func _end(rank: Grade.Rank, msg: String, close_lid: bool) -> void:
 		_set_lid(true)
 		await _lid_tween.finished
 	ResultScreen.open(self, rank, msg, before)
-
-
-func _show_overlay(text: String, button_text: String, action: Callable) -> void:
-	_message.text = text
-	_action_button.text = button_text
-	_action = action
-	_overlay.show()
 
 
 # --- 표 ---
