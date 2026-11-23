@@ -40,6 +40,7 @@ display_name = "다그닥-바와스"
 script = ExtResource("2")
 id = &"mad_rat"
 display_name = "미친 쥐"
+scene = "res://minigames/mad_rat/mad_rat.tscn"
 
 [resource]
 script = ExtResource("1")

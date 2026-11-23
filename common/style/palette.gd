@@ -12,3 +12,4 @@ extends Resource
 @export var scorch: Color = Color("d9b84a") # 종이 테두리가 누레진 색
 @export var burnt: Color = Color("2b2118")
 @export var iron: Color = Color("8a8f98")
+@export var water: Color = Color("6fb3d9")
