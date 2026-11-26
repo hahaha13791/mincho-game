@@ -235,7 +235,7 @@ func _end(rank: Grade.Rank, msg: String, close_lid: bool) -> void:
 
 func _make_paper(pos: Vector3) -> BallotPaper:
 	var p: BallotPaper = BallotPaper.new()
-	p.setup(SHAPES.pick_random(), PALETTE.mincho)
+	p.setup(SHAPES.pick_random(), PALETTE.paper, PALETTE.mincho.darkened(0.25)) # 흰 종이 위 연한 민트는 잘 안 보여 조금 진하게
 	p.position = pos
 	add_child(p)
 	_papers.append(p)
