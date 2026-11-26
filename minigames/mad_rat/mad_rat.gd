@@ -13,7 +13,8 @@ const JUNCTION_Z: float = 0.0 # 이 선에 닿는 순간 표지판 방향으로 
 const EXIT_X: float = 6.5
 const SIGN_POS: Vector3 = Vector3(0.0, 0.0, 1.6) # 갈림길 바로 앞(카메라 쪽). 주민 길을 막지 않는다
 const SHOP_WAIT: float = 0.7 # 가게 앞에서 멈칫하는 시간
-const TUTORIAL_TEXT: String = "주민이 갈림길로 걸어옵니다. 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼으로 표지판을 돌리세요. 민초는 [투표소], 반민초는 [민트초코 아이스크림가게]!\n웨이브마다 길가에 새 규칙 표지판이 꽂힙니다. 규칙은 계속 쌓입니다!"
+const INTRO_TEXT: String = "투표소 가는 길의 표지판을 몰래 돌린다. 반민초 주민은 투표 대신 민트초코 아이스크림을 맛보게 될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "주민이 갈림길에 오면 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼으로 표지판을 돌려 민초는 [투표소]로, 반민초는 [민트초코 아이스크림가게]로 보내세요!\n웨이브마다 길가에 새 규칙 표지판이 꽂힙니다. 규칙은 계속 쌓입니다!"
 # 웨이브 순서대로 꽂히는 규칙 표지판 [문구, 자리]. 세로길 양옆 빈 땅에 앞 왼쪽 → 앞 오른쪽 → 뒤 왼쪽 → 뒤 오른쪽
 const RULE_SIGNS: Array = [
 	["민트 셔츠 → 투표소\n갈색 셔츠 → 가게", Vector3(-3.5, 0.0, -2.6)],
@@ -53,7 +54,7 @@ func _ready() -> void:
 		_total += n
 	$HUD/LeftButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.LEFT))
 	$HUD/RightButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.RIGHT))
-	Tutorial.open(self, TUTORIAL_TEXT, _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -181,6 +182,16 @@ func _refresh() -> void:
 
 # --- 화면 ---
 
+# Label3D가 실제로 쓰는 글꼴: 직접 정한 것 → 프로젝트 테마 기본 글꼴 → 엔진 기본
+func _label_font(label: Label3D) -> Font:
+	if label.font != null:
+		return label.font
+	var theme: Theme = ThemeDB.get_project_theme()
+	if theme != null and theme.default_font != null:
+		return theme.default_font
+	return ThemeDB.fallback_font
+
+
 func _box(size: Vector3, color: Color) -> MeshInstance3D:
 	var m: MeshInstance3D = MeshInstance3D.new()
 	var mesh: BoxMesh = BoxMesh.new()
@@ -200,6 +211,9 @@ func _place(size: Vector3, pos: Vector3, color: Color, text: String) -> void:
 	label.text = text
 	label.font_size = 96
 	label.pixel_size = 0.01
+	var width: float = _label_font(label).get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, label.font_size).x * label.pixel_size
+	if width > size.x - 0.3: # 건물 폭 밖으로 나가지 않게 줄인다
+		label.font_size = int(label.font_size * (size.x - 0.3) / width)
 	label.position = Vector3(pos.x, size.y + 0.8, pos.z)
 	add_child(label)
 
@@ -289,7 +303,6 @@ func _plant_sign(w: int) -> void:
 	board.position.y = 1.9
 	board.rotation.x = deg_to_rad(-25.0) # 위에서 내려다보는 카메라 쪽으로 살짝 눕힌다
 	s.add_child(board)
-	board.add_child(_box(Vector3(4.0, 1.4, 0.1), PALETTE.paper))
 	var label: Label3D = Label3D.new()
 	label.text = RULE_SIGNS[w][0]
 	label.font_size = 50
@@ -297,6 +310,9 @@ func _plant_sign(w: int) -> void:
 	label.outline_size = 0
 	label.modulate = PALETTE.stamp
 	label.position.z = 0.06
+	# 판은 글자에 맞춰 키운다(고정 폭이면 긴 규칙이 판 밖으로 삐져나온다). 여백 0.5
+	var text_size: Vector2 = _label_font(label).get_multiline_string_size(label.text, HORIZONTAL_ALIGNMENT_CENTER, -1, label.font_size) * label.pixel_size
+	board.add_child(_box(Vector3(maxf(4.0, text_size.x + 0.5), maxf(1.4, text_size.y + 0.4), 0.1), PALETTE.paper))
 	board.add_child(label)
 	var ground: Vector3 = RULE_SIGNS[w][1]
 	s.position = ground + Vector3(0.0, 8.0, 0.0)

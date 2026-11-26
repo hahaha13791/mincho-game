@@ -6,37 +6,37 @@
 [sub_resource type="Resource" id="e1"]
 script = ExtResource("2")
 id = &"ballot_box"
-display_name = "임신한 투표함"
+display_name = "투표함 먹이주기"
 scene = "res://minigames/ballot_box/ballot_box.tscn"
 
 [sub_resource type="Resource" id="e2"]
 script = ExtResource("2")
 id = &"piano_ballot"
-display_name = "피아노표"
+display_name = "몰래 찍어라!"
 scene = "res://minigames/piano_ballot/piano_ballot.tscn"
 
 [sub_resource type="Resource" id="e4"]
 script = ExtResource("2")
 id = &"sandwich_ballot"
-display_name = "샌드위치표"
+display_name = "택갈이 대작전"
 scene = "res://minigames/sandwich_ballot/sandwich_ballot.tscn"
 
 [sub_resource type="Resource" id="e5"]
 script = ExtResource("2")
 id = &"owl_ballot"
-display_name = "올빼미표"
+display_name = "암흑 침투"
 scene = "res://minigames/owl_ballot/owl_ballot.tscn"
 
 [sub_resource type="Resource" id="e6"]
 script = ExtResource("2")
 id = &"vanishing_ink"
-display_name = "사라지는 잉크"
+display_name = "열과 함께 사라지다"
 scene = "res://minigames/vanishing_ink/vanishing_ink.tscn"
 
 [sub_resource type="Resource" id="e9"]
 script = ExtResource("2")
 id = &"mad_rat"
-display_name = "미친 쥐"
+display_name = "표지판 사보타주"
 scene = "res://minigames/mad_rat/mad_rat.tscn"
 
 [resource]

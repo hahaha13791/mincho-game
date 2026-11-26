@@ -18,7 +18,8 @@ const IRON_PRESS_POS: Vector3 = Vector3(0.0, 0.45, 0.0) # 수직으로 내려와
 const PAPER_OFF_X: float = 13.0 # 종이가 들어오고 나가는 화면 밖 거리
 const SLIDE_TIME: float = 0.3
 const BETWEEN_TIME: float = 0.7
-const TUTORIAL_TEXT: String = "반민초 표의 빨간 기표를 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 기표가 지워진 것입니다. 그 뒤에 마우스를 떼세요.\n다리미 둘레가 누레지다 타버리면 들킵니다. 빨리 누레지는 종이는 빨리 지워집니다.\n조금 일찍 떼면 기표가 옅게 남습니다. 한 번 떼면 끝!"
+const INTRO_TEXT: String = "기표소 펜을 열을 받으면 지워지는 잉크로 몰래 바꿔 두었다. 반민초 표를 다리미로 다리면 아무도 찍지 않은 기권 표가 될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "반민초 표의 빨간 기표를 다리미로 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 다 지워졌다는 뜻입니다. 그때 마우스를 떼세요!\n너무 오래 대면 다리미 둘레가 누레지다가 타 버립니다. 빨리 누레지는 종이는 빨리 지워집니다.\n조금 일찍 떼면 기표가 옅게 남습니다. 한 번 떼면 다시 댈 수 없습니다!"
 
 @export var id: StringName = &"vanishing_ink"
 
@@ -48,7 +49,7 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 7.0, 7.0), Vector3.ZERO)
 	_build_visuals()
-	Tutorial.open(self, TUTORIAL_TEXT, _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -61,7 +62,7 @@ func _process(delta: float) -> void:
 		_mark.hide()
 		_steam.emitting = true
 	if _t >= _burn_at:
-		_end_round(false, "앗, 종이가 타버렸다!", true)
+		_end_round(false, "앗, 종이가 타 버렸다!", true)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -105,7 +106,7 @@ func _next_round() -> void:
 	_hint.text = ""
 	_paper.position.x = -PAPER_OFF_X
 	await _slide_paper(0.0)
-	_hint.text = "마우스를 누르고 있으세요"
+	_hint.text = "마우스를 꾹 누르세요"
 	_state = State.READY
 
 

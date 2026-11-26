@@ -22,7 +22,8 @@ const CALL_WORD: String = "탁!" # 보여 주기 소리를 글자로
 const CALL_WORD_POS: Vector3 = Vector3(0.0, 2.6, PREVIEW_Z) # 뒤 레일 가운데 위. 화면에서 도장기 머리보다 위
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
-const TUTORIAL_TEXT: String = "날 따라해봐요! 먼저 뒤쪽 레일의 표가 가운데를 지나며 리듬을 들려줍니다. 듣기만 하세요.\n다음 마디에 같은 표가 같은 리듬으로 앞 레일의 찍는 틀에 옵니다. 그때 클릭!\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n낮은 소리와 함께 감시자가 화면 가장자리에서 고개를 내밀면, 감시자가 다 들어온 순간 오는 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
+const INTRO_TEXT: String = "개표대를 지나가는 빈 반민초 표에 몰래 민트 도장을 찍는다. 반민초 표는 민초 표가 되어 개표될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "날 따라 해 봐요! 먼저 뒤쪽 레일로 표가 지나가며 리듬을 보여 줍니다. 이때는 듣기만 하세요.\n다음 마디에 같은 리듬으로 표가 앞쪽 틀에 들어옵니다. 그때 클릭해서 찍으세요!\n빈 표(반민초)만 찍으세요. 민트 도장이 있는 표(민초)는 그냥 보내세요.\n낮은 소리가 나면 감시자가 화면 끝에서 고개를 내밉니다. 감시자가 다 들어왔을 때 오는 표는 찍지 마세요!"
 
 @export var id: StringName = &"piano_ballot"
 
@@ -64,7 +65,7 @@ func _ready() -> void:
 	_call_sfx = AudioStreamPlayer.new()
 	add_child(_call_sfx)
 	_build_visuals()
-	Tutorial.open(self, TUTORIAL_TEXT, _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
 
 
 func _start() -> void:
@@ -194,7 +195,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _beats[i]["watcher"]:
 		_finish(true, "감시자 코앞에서 쾅! 도장 소리가 온 마을에 울렸다.")
 	elif not _beats[i]["anti"]:
-		_mistake("민초 표를 찍었다!")
+		_mistake("앗, 민초 표에 찍어 버렸다!")
 
 
 # 판정 창 안에 있는 아직 안 찍은 표. 창은 옆 표와 겹치지 않으므로 많아야 하나
@@ -223,11 +224,11 @@ func _finish(caught: bool, msg: String) -> void:
 	if not caught:
 		match rank:
 			Grade.Rank.PERFECT:
-				msg = "리듬감이 너무 좋아서 아무도 이게 부정이라는 걸 눈치채지 못했다."
+				msg = "도장 소리가 박자에 딱 묻혔다. 아무도 눈치채지 못했다."
 			Grade.Rank.SUCCESS:
 				msg = "박자가 몇 번 어긋났지만 개표는 무사히 끝났다."
 			_:
-				msg = "박자가 엉망이다. 개표대가 시끄러워 사람들이 몰려왔다."
+				msg = "박자가 엉망이라 도장 소리가 다 들렸다. 사람들이 몰려왔다."
 	await get_tree().create_timer(0.8).timeout
 	var before: float = GameState.mincho_percent
 	GameState.submit_result(id, rank)

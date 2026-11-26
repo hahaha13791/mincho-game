@@ -78,12 +78,38 @@ func add_line(text: String, scale_font: float = 1.0) -> Label:
 	l.theme_type_variation = &"HandLabel"
 	l.text = text
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if scale_font != 1.0:
-		l.add_theme_font_size_override("font_size", int(l.get_theme_font_size("font_size") * scale_font))
-	_lines.add_child(l)
+	# 배율은 트리 밖에서 읽는 기본 글자 크기(28) 기준이다. 보드 장식 크기가 이 기준으로 맞춰져 있다
+	var scaled: int = int(l.get_theme_font_size("font_size") * scale_font)
+	_lines.add_child(l) # 손글씨 글꼴·크기를 읽으려면 트리에 먼저 넣는다
+	_fit(l, scaled if scale_font != 1.0 else l.get_theme_font_size("font_size"))
 	return l
+
+
+# 메모 밖으로 글자가 나가지 않게 맞춘다. 자동 줄바꿈은 한글을 음절 중간("사라지/다")에서 끊어서 쓰지 않고,
+# 넘치면 가운데에 가장 가까운 띄어쓰기에서 한 번 끊고, 그래도 넘치는 줄이 있으면 글자를 줄인다
+func _fit(l: Label, font_size: int) -> void:
+	var width: float = size.x + _lines.offset_right - _lines.offset_left
+	var font: Font = l.get_theme_font("font")
+	var text: String = l.text
+	if not text.contains("\n") and _line_width(font, text, font_size) > width:
+		var best: int = -1
+		for i in text.length():
+			if text[i] == " " and (best < 0 or absi(i - text.length() / 2) < absi(best - text.length() / 2)):
+				best = i
+		if best >= 0:
+			text = text.substr(0, best) + "\n" + text.substr(best + 1)
+	l.text = text
+	var widest: float = 0.0
+	for line in text.split("\n"):
+		widest = maxf(widest, _line_width(font, line, font_size))
+	if widest > width:
+		font_size = int(font_size * width / widest)
+	l.add_theme_font_size_override("font_size", font_size)
+
+
+func _line_width(font: Font, line: String, font_size: int) -> float:
+	return font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 
 
 ## 메모 위에 비스듬히 찍힌 도장(등급 등)

@@ -31,7 +31,8 @@ const SHAPES: Array = [
 ]
 const THUMPS: int = 3 # 도착 예고 발소리 수. 하나씩 늘어난다
 const THUMP_GAP: float = 0.8 # 발소리 간격. 마지막 쿵 → 도착 = warn_lead - (THUMPS - 1) × 이 값
-const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵, 쿵, 쿵 발소리가 세 번 나면 참관인이 도착합니다. 그 전에 [뚜껑 닫기]!\n참관인은 여러 번 옵니다. 뚜껑이 열려 있으면 들킵니다.\n선을 넘게 쌓으면 뚜껑이 닫히지 않습니다. 마지막 방문 때 10장은 있어야 하고, 12장이면 대성공!"
+const INTRO_TEXT: String = "투표가 시작되기 전에 투표함에 민초 표를 미리 넣어 둔다. 개표하면 투표한 사람보다 민초 표가 더 많이 나올 것이다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵, 쿵, 쿵 발소리가 세 번 나면 참관인이 도착합니다.\n참관인이 오기 전에 뚜껑을 닫으세요!\n선을 넘으면 뚜껑이 닫히지 않습니다. 10장을 넣으면 미션성공, 12장이면 완전범죄!"
 
 @export var id: StringName = &"ballot_box"
 @export var perfect_papers: int = 12 # 이 장수 이상 + 여유 있게 닫으면 완전범죄
@@ -75,7 +76,7 @@ func _ready() -> void:
 		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + 1.0 + i * 1.6, 0.0))
 		p.set_waiting(false)
 	$HUD/CloseButton.pressed.connect(_on_close_pressed)
-	Tutorial.open(self, TUTORIAL_TEXT, _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
 
 
 func _process(delta: float) -> void:
@@ -88,7 +89,7 @@ func _process(delta: float) -> void:
 	_move_observer()
 	if _next_visit < _visits.size() and _elapsed >= _visits[_next_visit]:
 		if not _lid_closed:
-			_end(Grade.Rank.CAUGHT, "참관인이 열린 투표함을 들여다봤다. 표가 우르르 쏟아졌다.", false)
+			_end(Grade.Rank.CAUGHT, "참관인이 열린 투표함을 보자, 민트표가 산더미처럼 쌓여 있었다.", false)
 			return
 		_min_margin = minf(_min_margin, _visits[_next_visit] - _closed_at)
 		_next_visit += 1
@@ -207,11 +208,11 @@ func _finish() -> void:
 	var msg: String
 	match rank:
 		Grade.Rank.PERFECT:
-			msg = "참관인은 아무것도 눈치채지 못했다. 투표함이 조금 배불렀을 뿐."
+			msg = "참관인은 아무것도 눈치채지 못했다. 투표함이 조금 무거워졌을 뿐."
 		Grade.Rank.SUCCESS:
-			msg = "아슬아슬! 뚜껑이 닫히는 순간 참관인이 들어왔다."
+			msg = "아슬아슬! 참관인이 보기 전에 뚜껑을 닫았다!"
 		_:
-			msg = "투표함이 너무 홀쭉하다. 참관인이 고개를 갸웃한다."
+			msg = "투표함이 너무 홀쭉하다. 투표함이 가볍게 옮겨진다."
 	_end(rank, msg, true)
 
 

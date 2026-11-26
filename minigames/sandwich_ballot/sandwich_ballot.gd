@@ -11,7 +11,8 @@ const SHEET_H: float = 0.06 # 표 한 장의 높이. 100장 = 6.0
 const BREAD_H: float = 0.25 # 위·아래 민초 묶음 높이 (장수에 안 셈)
 const BUNDLE_XZ: Vector2 = Vector2(3.2, 2.2)
 const BETWEEN_TIME: float = 1.6
-const TUTORIAL_TEXT: String = "위·아래의 민트 띠지 민초 묶음은 항상 깔립니다. 장수에 세지 않습니다.\n[쌓기]를 누르면 가운데에 흰 반민초 표가 한 번에 %d~%d장씩 랜덤으로 쌓입니다.\n[닫기]로 위쪽 민초 묶음을 덮으면, 가운데 반민초 표가 전부 민초표로 집계됩니다.\n목표 %d장 이상이 필요하지만, %d장을 넘기면 두께로 들킵니다!"
+const INTRO_TEXT: String = "반민초 표 다발의 맨 위와 맨 아래에 민초 표 묶음을 끼운다. 이제 이 묶음은 민초표로만 이루어진 묶음이 된다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "맨 위와 맨 아래에는 민트 띠지를 두른 민초 묶음이 있습니다. 이 두 묶음은 장수에 들어가지 않습니다.\n[쌓기]를 누를 때마다 반민초 표가 가운데에 %d~%d장씩 쌓입니다.\n[닫기]를 누르면 위 묶음으로 덮어, 가운데 표가 전부 민초표로 집계됩니다.\n%d장 이상 쌓으세요. 하지만 %d장을 넘기면 너무 두꺼워서 들킵니다!"
 
 @export var id: StringName = &"sandwich_ballot"
 
@@ -43,7 +44,7 @@ func _ready() -> void:
 		_refresh())
 	_hit_button.pressed.connect(_on_hit)
 	_stand_button.pressed.connect(_on_stand)
-	Tutorial.open(self, TUTORIAL_TEXT % [CONFIG.add_min, CONFIG.add_max, CONFIG.gain_target, CONFIG.bust_limit], _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT % [CONFIG.add_min, CONFIG.add_max, CONFIG.gain_target, CONFIG.bust_limit], _start)
 
 
 func _start() -> void:
@@ -75,7 +76,7 @@ func _on_hit() -> void:
 	_refresh()
 	await _stack.add_sheets(add) # 한 장씩 쌓이는 동안 버튼은 막힌다
 	if _sheets > CONFIG.bust_limit:
-		_hint.text = "%d장! 두께로 들켰다." % _sheets
+		_hint.text = "%d장! 너무 두꺼워서 들켰다." % _sheets
 		_flash_line()
 		await _stack.collapse()
 		_end_round(false, _hint.text)
@@ -119,9 +120,9 @@ func _finish() -> void:
 	var msg: String
 	match rank:
 		Grade.Rank.PERFECT:
-			msg = "다발은 두툼하고 맨 위 묶음은 방긋 웃고 있다. 아무도 속을 열어보지 않았다."
+			msg = "겉은 멀쩡한 민초 다발. 아무도 속을 들춰 보지 않았다."
 		Grade.Rank.SUCCESS:
-			msg = "다발은 다소 얇아졌지만 겉보기엔 흠잡을 데 없다."
+			msg = "다발이 좀 얇지만, 겉으로는 티가 안 난다."
 		_:
 			msg = "다발이 어딘가 이상하다. 개표원이 다발을 펼쳐 보기 시작했다."
 	var before: float = GameState.mincho_percent

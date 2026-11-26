@@ -15,7 +15,8 @@ const PROPS: Dictionary = {
 	&"table": preload("res://minigames/owl_ballot/props/table.tscn"),
 	&"partition": preload("res://minigames/owl_ballot/props/partition.tscn"),
 }
-const TUTORIAL_TEXT: String = "불이 켜진 동안 방해물, 투표함(파랑), 감시자의 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동합니다. 가로로 먼저, 세로로 걸어가며 방해물에서 멈춥니다.\n투표함 칸에 들어가면 손을 쓴 것입니다. 전부 처리하면 성공!\n불이 켜지는 순간 감시자 시야에 있으면 들킵니다. 깜빡이면 곧 전환됩니다.\n불이 켜진 동안 감시자는 다음 자리로 걸어갑니다. 걸어가는 곳을 잘 봐 두세요!"
+const INTRO_TEXT: String = "개표장 불이 꺼진 사이 투표함마다 몰래 민초 표를 넣는다. 아침이 되면 모든 투표함에 민초 표가 늘어나 있을 것이다." # 튜토리얼 위 칸: 어떤 수법인지
+const TUTORIAL_TEXT: String = "불이 켜져 있는 동안 방해물, 투표함(파랑), 감시자 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동하세요. 가로로 먼저, 그다음 세로로 가며 방해물에 막히면 멈춥니다.\n투표함 칸에 들어가면 그 투표함은 처리 끝! 전부 처리하면 성공입니다.\n불이 켜질 때 감시자 시야 안에 있으면 들킵니다. 불이 깜빡이면 곧 켜지거나 꺼진다는 신호입니다.\n불이 켜진 동안 감시자는 다음 자리로 걸어갑니다. 어디로 가는지 잘 봐 두세요!"
 
 @export var id: StringName = &"owl_ballot"
 
@@ -44,7 +45,7 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-60.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 11.0, 6.0), Vector3.ZERO)
 	_build_visuals()
-	Tutorial.open(self, TUTORIAL_TEXT, _start)
+	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
 
 
 func _start() -> void:
@@ -117,7 +118,7 @@ func _enter_light(duration: float, first: bool) -> void:
 			return
 		_near_missed = _near_missed or OwlRules.is_near(_cell, seen)
 		if _cycle >= CONFIG.cycles:
-			$HUD/StateLabel.text = "마지막 불! (이후 시간 초과)"
+			$HUD/StateLabel.text = "마지막 불! 이제 어둠은 오지 않는다"
 
 
 # 불이 켜진 동안: 시야를 watch_hold초 보여 준 뒤 끄고, 감시자가 ① 걸어갈 쪽으로 몸을 돌리고 ② 다음 자리로 걸어간 뒤

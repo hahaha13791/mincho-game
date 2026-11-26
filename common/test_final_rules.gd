@@ -30,8 +30,8 @@ func _init() -> void:
 	_check(FinalRules.title(_ranks(5, 0, 2), 59.0) == "운 좋은 행동대장", "적발 많은데 이김")
 	_check(FinalRules.title(_ranks(5, 2, 0), 67.0) == "소리 없는 민초 참모", "적발 없고 완전범죄 다수")
 	_check(FinalRules.title(_ranks(0, 7, 0), 54.5) == "동네 민초 대장", "무난하게 이김")
-	_check(FinalRules.title(_ranks(0, 6, 1), 48.0) == "한 끗 모자란 민초단원", "아깝게 짐")
-	_check(FinalRules.title(_ranks(0, 2, 5), 21.0) == "열세 민초단 평단원", "크게 짐")
+	_check(FinalRules.title(_ranks(0, 6, 1), 48.0) == "얼빵한 민초단원", "아깝게 짐")
+	_check(FinalRules.title(_ranks(0, 2, 5), 21.0) == "평범한 민초 애호가", "크게 짐")
 
 	print("TEST OK" if _fails == 0 else "TEST FAILED: %d" % _fails)
 	quit(_fails)

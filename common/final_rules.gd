@@ -30,5 +30,5 @@ static func title(ranks: Array, percent: float) -> String:
 	if win:
 		return "동네 민초 대장"
 	if caught <= 1:
-		return "한 끗 모자란 민초단원"
-	return "열세 민초단 평단원"
+		return "얼빵한 민초단원"
+	return "평범한 민초 애호가"

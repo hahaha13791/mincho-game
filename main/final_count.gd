@@ -36,7 +36,7 @@ func _ready() -> void:
 	var ranks: Array = GameState.grades.values()
 	var percent: float = GameState.mincho_percent
 	var win: bool = FinalRules.is_win(percent)
-	box.add_child(_hidden(_label("민초 승리! (아무 의미 없는 승리)" if win else "반민초 승리... (아무 의미 없는 패배)", 48)))
+	box.add_child(_hidden(_label("민초 승리!" if win else "반민초 승리...", 48)))
 	box.add_child(_hidden(_label("칭호: %s" % FinalRules.title(ranks, percent), 44)))
 	box.add_child(_hidden(_label("종합점수 %d점" % GameState.total_score(), 36)))
 	box.add_child(_hidden(_label(_detail(), 28)))
