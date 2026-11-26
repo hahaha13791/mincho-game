@@ -269,7 +269,8 @@ func _build_pile() -> void:
 			var half: float = _half_width(shape, p.rotation.z)
 			p.position = Vector3(clampf(x + half, left + half, right - half), y + rng.randf_range(-0.1, 0.1), 0.0)
 			add_child(p)
-			x += half * 2.0 * rng.randf_range(0.6, 0.9) # 조금씩 겹쳐 빈틈 없이
+			# 아랫줄은 빈틈 없이 맞대고, 윗줄은 띄엄띄엄(장수를 줄이면서 울퉁불퉁하게)
+			x += half * 2.0 * (rng.randf_range(1.1, 1.5) if top_row else rng.randf_range(0.85, 1.0))
 		y += PILE_ROW
 
 
@@ -396,6 +397,12 @@ func _build_visuals() -> void:
 	label.shaded = false
 	label.position = Vector3(BOX_CENTER_X, FLOOR_Y - WALL_T + front_h / 2.0, BOX_D / 2.0 + 0.05)
 	add_child(label)
+	# 얇은 검은 테두리: 외곽선은 하나뿐이라, 외곽선이 조금 더 두꺼운 검은 사본을 바로 뒤에 둔다
+	var rim: Label3D = label.duplicate()
+	rim.outline_size = label.outline_size + 14
+	rim.outline_modulate = PALETTE.stamp
+	rim.position.z -= 0.01
+	add_child(rim)
 
 	var back: MeshInstance3D = _box(Vector3(BOX_W, BOX_H, 0.2), box_color.darkened(0.3))
 	back.position = Vector3(BOX_CENTER_X, mid_y, -BOX_D / 2.0 + 0.1)
