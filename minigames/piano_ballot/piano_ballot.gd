@@ -7,6 +7,7 @@ enum State { TUTORIAL, PLAYING, ENDED }
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: PianoConfig = preload("res://minigames/piano_ballot/piano_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
+const CONVEYOR: PackedScene = preload("res://minigames/piano_ballot/props/conveyor.tscn")
 const SPACING: float = 2.0 # 박자당 표 사이 거리
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
@@ -27,6 +28,7 @@ var _warn_until: float = -1.0
 var _sfx: AudioStreamPlayer
 var _stamper: MeshInstance3D
 var _watcher: Watcher
+var _conveyor: Conveyor
 var _stamp_tween: Tween
 
 @onready var _camera: Camera3D = $Camera3D
@@ -70,6 +72,7 @@ func _process(delta: float) -> void:
 		_tick(k - CONFIG.count_in)
 	for i in _ballots.size():
 		_ballots[i].position.x = (_t - _first - i * _beat_dur) / _beat_dur * SPACING
+	_conveyor.scroll(_t / _beat_dur * SPACING) # 표와 같은 속도
 	var idx: int = roundi((_t - _first) / _beat_dur)
 	_watcher.set_present(idx >= 0 and idx < _beats.size() and _beats[idx]["watcher"])
 	_warn.visible = _t < _warn_until
@@ -192,9 +195,8 @@ func _build_visuals() -> void:
 	we.environment = env
 	add_child(we)
 
-	var belt: MeshInstance3D = _box(Vector3(22.0, 0.1, 1.6), PALETTE.iron)
-	belt.position.y = 0.0
-	add_child(belt)
+	_conveyor = CONVEYOR.instantiate()
+	add_child(_conveyor)
 
 	# 찍는 지점 표시 틀
 	var frame: MeshInstance3D = _box(Vector3(1.8, 0.02, 1.4), PALETTE.accent)

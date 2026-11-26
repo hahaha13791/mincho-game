@@ -12,6 +12,7 @@ extends Resource
 @export var cardboard: Color = Color("d4b98c") # 상자. 반민초 갈색과 헷갈리지 않게 밝게
 @export var suit: Color = Color("4a4d55") # 감시자 정장. 정당색을 피해 무채색
 @export var sunglasses: Color = Color("1c1c1f")
+@export var belt: Color = Color("3a3b40") # 컨베이어 고무 벨트
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")
