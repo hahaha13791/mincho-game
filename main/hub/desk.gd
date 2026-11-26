@@ -131,10 +131,11 @@ func _build() -> void:
 	_cyl(lamp, 0.45, 0.08, Vector3(0, 0.04, 0), PALETTE.stamp)
 	var arm1: MeshInstance3D = _cap(lamp, 0.06, 1.6, Vector3(0.25, 0.8, 0), PALETTE.stamp)
 	arm1.rotation.z = -0.35
-	var arm2: MeshInstance3D = _cap(lamp, 0.06, 1.2, Vector3(0.8, 1.75, 0), PALETTE.stamp)
-	arm2.rotation.z = 1.0
+	# 윗팔: 아랫팔 끝(0.52, 1.55)에서 오른쪽 위로 올라가 갓을 높이 든다
+	var arm2: MeshInstance3D = _cap(lamp, 0.06, 1.03, Vector3(0.92, 1.765, 0), PALETTE.stamp)
+	arm2.rotation.z = -1.08
 	# 갓은 팔 끝에 매달려 아래를 본다(빛이 곧게 내려와 책상 웅덩이와 이어지게)
-	var shade: MeshInstance3D = _cone(lamp, 0.12, 0.5, 0.55, Vector3(1.31, 1.18, 0), PALETTE.mincho.darkened(0.25))
+	var shade: MeshInstance3D = _cone(lamp, 0.12, 0.5, 0.55, Vector3(1.32, 1.735, 0), PALETTE.mincho.darkened(0.25))
 	_shade = shade
 
 	# 커피잔
