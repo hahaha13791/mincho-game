@@ -52,8 +52,8 @@ func _ready() -> void:
 	var lx: float = -LENGTH / 2.0 + LEG_GAP / 2.0
 	while lx < LENGTH / 2.0:
 		for side in [1.0, -1.0]:
-			_add(Vector3(0.08, 1.0, 0.08), Vector3(lx, ROLLER_Y - ROLLER_R - 0.6, side * (front + 0.1)), PALETTE.iron.darkened(0.35))
-		_add(Vector3(0.06, 0.06, WIDTH + 0.2), Vector3(lx, -0.95, 0), PALETTE.iron.darkened(0.35))
+			_add(Vector3(0.18, 1.0, 0.18), Vector3(lx, ROLLER_Y - ROLLER_R - 0.6, side * (front + 0.1)), PALETTE.iron.darkened(0.35))
+		_add(Vector3(0.12, 0.12, WIDTH + 0.2), Vector3(lx, -0.95, 0), PALETTE.iron.darkened(0.35))
 		lx += LEG_GAP
 
 	# 찍는 자리 표시: 앞쪽 윗 띠에 노랑·검정 경고 줄무늬

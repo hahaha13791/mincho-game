@@ -1,5 +1,5 @@
 extends Node3D
-## 피아노표(id: piano_ballot). 컨베이어로 일정한 박자로 오는 표 중 반민초(갈색) 표만 박자에 맞춰 찍는다.
+## 피아노표(id: piano_ballot). 컨베이어로 일정한 박자로 오는 표 중 반민초 표(빈 흰 종이)만 박자에 맞춰 찍는다. 민초 표는 민트 도장이 미리 찍혀 있다.
 ## 감시자는 한 박자 전에 소리와 화면으로 예고하며, 그 박자에 찍으면 적발. 클릭 = 찍기.
 
 enum State { TUTORIAL, PLAYING, ENDED }
@@ -13,7 +13,7 @@ const STAMP_MARK: PackedScene = preload("res://minigames/piano_ballot/props/stam
 const SPACING: float = 2.0 # 박자당 표 사이 거리
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
-const TUTORIAL_TEXT: String = "표가 일정한 박자로 컨베이어를 타고 옵니다. 중앙의 찍는 틀에 닿는 박자에 맞춰 클릭하세요.\n갈색 표(반민초)만 찍습니다. 초록 표(민초)는 그냥 보내세요.\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 바로 다음 박자에는 아무것도 찍으면 안 됩니다.\n감시자 앞에서 찍으면 바로 들킵니다!"
+const TUTORIAL_TEXT: String = "표가 일정한 박자로 컨베이어를 타고 옵니다. 중앙의 찍는 틀에 닿는 박자에 맞춰 클릭하세요.\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 바로 다음 박자에는 아무것도 찍으면 안 됩니다.\n감시자 앞에서 찍으면 바로 들킵니다!"
 
 @export var id: StringName = &"piano_ballot"
 
@@ -56,7 +56,14 @@ func _start() -> void:
 	_resolved.resize(_beats.size())
 	_resolved.fill(false)
 	for beat in _beats:
-		var b: MeshInstance3D = _box(Vector3(1.4, 0.06, 1.0), PALETTE.anti_mincho if beat["anti"] else PALETTE.mincho)
+		var b: MeshInstance3D = _box(Vector3(1.4, 0.06, 1.0), PALETTE.paper)
+		if not beat["anti"]: # 민초 표: 민트 도장이 손으로 찍은 듯 조금씩 다른 자리·각도로
+			var vote: Node3D = STAMP_MARK.instantiate()
+			vote.ink = PALETTE.mincho.darkened(0.2) # 흰 종이 위에서 잘 보이게
+			vote.scale = Vector3.ONE * 1.3
+			vote.position = Vector3(randf_range(-0.3, 0.3), 0.035, randf_range(-0.15, 0.15))
+			vote.rotation.y = randf_range(-0.4, 0.4)
+			b.add_child(vote)
 		b.position = Vector3(-100.0, 0.1, 0.0)
 		add_child(b)
 		_ballots.append(b)
