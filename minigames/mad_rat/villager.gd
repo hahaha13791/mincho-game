@@ -6,7 +6,7 @@ const PALETTE: Palette = preload("res://common/style/palette.tres")
 
 var is_mincho: bool = true
 
-@onready var _outfit: MeshInstance3D = $Outfit
+@onready var _outfit: Node3D = $Outfit # 옷 파츠(셔츠, 소매)는 모두 이 아래에 둔다
 @onready var _hat: MeshInstance3D = $Hat
 
 
@@ -16,7 +16,9 @@ func setup(mincho: bool, decoy_hat: bool) -> void:
 	var white: StandardMaterial3D = _mat(PALETTE.doll)
 	for part in ["Torso", "Head", "ArmL", "ArmR", "LegL", "LegR", "FootL", "FootR"]:
 		(get_node(part) as MeshInstance3D).material_override = white
-	_outfit.material_override = _mat(PALETTE.mincho if mincho else PALETTE.anti_mincho)
+	var cloth: StandardMaterial3D = _mat(PALETTE.mincho if mincho else PALETTE.anti_mincho)
+	for part in _outfit.get_children():
+		(part as MeshInstance3D).material_override = cloth
 	_hat.visible = decoy_hat
 	_hat.material_override = _mat(PALETTE.anti_mincho if mincho else PALETTE.mincho)
 
