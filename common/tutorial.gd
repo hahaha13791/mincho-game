@@ -51,6 +51,7 @@ static func open(host: Node, intro: String, text: String, on_start: Callable) ->
 		on_start.call())
 	box.add_child(button)
 	host.add_child(screen)
+	button.grab_focus() # Space·Enter로도 시작
 	wrap_words(intro_label, WIDTH) # 글꼴은 트리에 들어간 뒤에야 테마에서 얻는다
 	wrap_words(rules_label, WIDTH)
 

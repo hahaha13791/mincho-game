@@ -1,5 +1,5 @@
 extends Node3D
-## 사라지는 잉크(id: vanishing_ink). 마우스를 누르는 동안 다리미를 댄다. 김이 나면 기표가 지워진 것이고,
+## 사라지는 잉크(id: vanishing_ink). 마우스나 Space를 누르는 동안 다리미를 댄다. 김이 나면 기표가 지워진 것이고,
 ## 그 뒤 다리미 둘레가 타기 전에 떼야 성공. 한 번 떼면 그 라운드는 끝이다.
 ## 종이는 왼쪽에서 들어와 오른쪽으로 나간다. 종이마다 지워지는 시간이 빠름·보통·느림으로 다르고, 누레지는 속도도 그에 비례한다.
 ## 김 나기 전에 떼도 충분히 댔으면 기표가 옅게 남는다(지운 장으로 치지만 완전범죄는 아님).
@@ -19,7 +19,7 @@ const PAPER_OFF_X: float = 13.0 # 종이가 들어오고 나가는 화면 밖 �
 const SLIDE_TIME: float = 0.3
 const BETWEEN_TIME: float = 0.7
 const INTRO_TEXT: String = "기표소 펜을 열을 받으면 지워지는 잉크로 몰래 바꿔 두었다. 반민초 표를 다리미로 다리면 아무도 찍지 않은 기권 표가 될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "반민초 표의 빨간 기표를 다리미로 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 다 지워졌다는 뜻입니다. 그때 마우스를 떼세요!\n너무 오래 대면 다리미 둘레가 누레지다가 타 버립니다. 빨리 누레지는 종이는 빨리 지워집니다.\n조금 일찍 떼면 기표가 옅게 남습니다. 한 번 떼면 다시 댈 수 없습니다!"
+const TUTORIAL_TEXT: String = "반민초 표의 빨간 기표를 다리미로 지우세요. 마우스나 Space를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 다 지워졌다는 뜻입니다. 그때 손을 떼세요!\n너무 오래 대면 다리미 둘레가 누레지다가 타 버립니다. 빨리 누레지는 종이는 빨리 지워집니다.\n조금 일찍 떼면 기표가 옅게 남습니다. 한 번 떼면 다시 댈 수 없습니다!"
 
 @export var id: StringName = &"vanishing_ink"
 
@@ -66,16 +66,18 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton:
+	var down: bool
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		down = event.pressed
+	elif event.is_action("mg_action") and not event.is_echo(): # Space를 누르고 있는 동안 = 마우스를 누르고 있는 동안
+		down = event.is_pressed()
+	else:
 		return
-	var mb: InputEventMouseButton = event
-	if mb.button_index != MOUSE_BUTTON_LEFT:
-		return
-	if mb.pressed and _state == State.READY:
+	if down and _state == State.READY:
 		_state = State.IRONING
 		_hint.text = "…"
 		_move_iron(IRON_PRESS_POS)
-	elif not mb.pressed and _state == State.IRONING:
+	elif not down and _state == State.IRONING:
 		_release()
 
 
@@ -106,7 +108,7 @@ func _next_round() -> void:
 	_hint.text = ""
 	_paper.position.x = -PAPER_OFF_X
 	await _slide_paper(0.0)
-	_hint.text = "마우스를 꾹 누르세요"
+	_hint.text = "마우스나 Space를 꾹 누르세요"
 	_state = State.READY
 
 

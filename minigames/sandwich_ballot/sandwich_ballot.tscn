@@ -64,9 +64,11 @@ theme_override_constants/separation = 20
 [node name="HitButton" type="Button" parent="HUD/Buttons"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-text = "쌓기"
+focus_mode = 0
+text = "쌓기 [Space]"
 
 [node name="StandButton" type="Button" parent="HUD/Buttons"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
-text = "닫기"
+focus_mode = 0
+text = "닫기 [Enter]"

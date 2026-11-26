@@ -12,7 +12,7 @@ const BREAD_H: float = 0.25 # 위·아래 민초 묶음 높이 (장수에 안 �
 const BUNDLE_XZ: Vector2 = Vector2(3.2, 2.2)
 const BETWEEN_TIME: float = 1.6
 const INTRO_TEXT: String = "반민초 표 다발의 맨 위와 맨 아래에 민초 표 묶음을 끼운다. 이제 이 묶음은 민초표로만 이루어진 묶음이 된다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "맨 위와 맨 아래에는 민트 띠지를 두른 민초 묶음이 있습니다. 이 두 묶음은 장수에 들어가지 않습니다.\n[쌓기]를 누를 때마다 반민초 표가 가운데에 %d~%d장씩 쌓입니다.\n[닫기]를 누르면 위 묶음으로 덮어, 가운데 표가 전부 민초표로 집계됩니다.\n%d장 이상 쌓으세요. 하지만 %d장을 넘기면 너무 두꺼워서 들킵니다!"
+const TUTORIAL_TEXT: String = "맨 위와 맨 아래에는 민트 띠지를 두른 민초 묶음이 있습니다. 이 두 묶음은 장수에 들어가지 않습니다.\n[쌓기]나 Space를 누를 때마다 반민초 표가 가운데에 %d~%d장씩 쌓입니다.\n[닫기]나 Enter를 누르면 위 묶음으로 덮어, 가운데 표가 전부 민초표로 집계됩니다.\n%d장 이상 쌓으세요. 하지만 %d장을 넘기면 너무 두꺼워서 들킵니다!"
 
 @export var id: StringName = &"sandwich_ballot"
 
@@ -45,6 +45,14 @@ func _ready() -> void:
 	_hit_button.pressed.connect(_on_hit)
 	_stand_button.pressed.connect(_on_stand)
 	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT % [CONFIG.add_min, CONFIG.add_max, CONFIG.gain_target, CONFIG.bust_limit], _start)
+
+
+# 키보드: 버튼과 같은 동작. 둘 다 _state가 PLAYING일 때만 먹는다
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("mg_action"):
+		_on_hit()
+	elif event.is_action_pressed("mg_confirm"):
+		_on_stand()
 
 
 func _start() -> void:

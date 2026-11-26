@@ -14,7 +14,7 @@ const EXIT_X: float = 6.5
 const SIGN_POS: Vector3 = Vector3(0.0, 0.0, 1.6) # 갈림길 바로 앞(카메라 쪽). 주민 길을 막지 않는다
 const SHOP_WAIT: float = 0.7 # 가게 앞에서 멈칫하는 시간
 const INTRO_TEXT: String = "투표소 가는 길의 표지판을 몰래 돌린다. 반민초 주민은 투표 대신 민트초코 아이스크림을 맛보게 될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "주민이 갈림길에 오면 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼으로 표지판을 돌려 민초는 [투표소]로, 반민초는 [민트초코 아이스크림가게]로 보내세요!\n웨이브마다 길가에 새 규칙 표지판이 꽂힙니다. 규칙은 계속 쌓입니다!"
+const TUTORIAL_TEXT: String = "주민이 갈림길에 오면 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼이나 ←→(A/D) 키로 표지판을 돌려 민초는 [투표소]로, 반민초는 [민트초코 아이스크림가게]로 보내세요!\n웨이브마다 길가에 새 규칙 표지판이 꽂힙니다. 규칙은 계속 쌓입니다!"
 # 웨이브 순서대로 꽂히는 규칙 표지판 [문구, 자리]. 세로길 양옆 빈 땅에 앞 왼쪽 → 앞 오른쪽 → 뒤 왼쪽 → 뒤 오른쪽
 const RULE_SIGNS: Array = [
 	["민트 셔츠 → 투표소\n갈색 셔츠 → 가게", Vector3(-3.5, 0.0, -2.6)],
@@ -56,6 +56,14 @@ func _ready() -> void:
 	$HUD/LeftButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.LEFT))
 	$HUD/RightButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.RIGHT))
 	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
+
+
+# 키보드: ←(A)는 투표소, →(D)는 가게. 버튼과 같은 동작
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("mg_left"):
+		_turn_sign(MadRatRules.Dir.LEFT)
+	elif event.is_action_pressed("mg_right"):
+		_turn_sign(MadRatRules.Dir.RIGHT)
 
 
 func _process(delta: float) -> void:

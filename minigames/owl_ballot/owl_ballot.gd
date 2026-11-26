@@ -1,6 +1,6 @@
 extends Node3D
 ## 올빼미표(id: owl_ballot). 불이 켜진 동안 맵(방해물·투표함·감시자 시야)을 외우고, 꺼진 동안에만 움직여 투표함을 처리한다.
-## 불이 켜지는 순간 감시자 시야에 있으면 적발. 이동은 칸을 클릭하면 가로 먼저, 세로 다음으로 걸어가며 방해물에서 멈춘다.
+## 불이 켜지는 순간 감시자 시야에 있으면 적발. 이동은 방향키(WASD)로 한 칸씩, 방해물이면 못 간다.
 
 enum State { TUTORIAL, LIGHT, DARK, ENDED }
 
@@ -16,7 +16,7 @@ const PROPS: Dictionary = {
 	&"partition": preload("res://minigames/owl_ballot/props/partition.tscn"),
 }
 const INTRO_TEXT: String = "개표장 불이 꺼진 사이 투표함마다 몰래 민초 표를 넣는다. 아침이 되면 모든 투표함에 민초 표가 늘어나 있을 것이다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "불이 켜져 있는 동안 방해물, 투표함(파랑), 감시자 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동하세요. 가로로 먼저, 그다음 세로로 가며 방해물에 막히면 멈춥니다.\n투표함 칸에 들어가면 그 투표함은 처리 끝! 전부 처리하면 성공입니다.\n불이 켜질 때 감시자 시야 안에 있으면 들킵니다. 불이 깜빡이면 곧 켜지거나 꺼진다는 신호입니다.\n불이 켜진 동안 감시자는 다음 자리로 걸어갑니다. 어디로 가는지 잘 봐 두세요!"
+const TUTORIAL_TEXT: String = "불이 켜져 있는 동안 방해물, 투표함(파랑), 감시자 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 방향키(WASD)로 한 칸씩 움직이세요. 방해물이 있는 칸으로는 갈 수 없습니다.\n투표함 칸에 들어가면 그 투표함은 처리 끝! 전부 처리하면 성공입니다.\n불이 켜질 때 감시자 시야 안에 있으면 들킵니다. 불이 깜빡이면 곧 켜지거나 꺼진다는 신호입니다.\n불이 켜진 동안 감시자는 다음 자리로 걸어갑니다. 어디로 가는지 잘 봐 두세요!"
 
 @export var id: StringName = &"owl_ballot"
 
@@ -25,6 +25,7 @@ var _cycle: int = 0 # 불이 켜진 횟수 (처음 켜짐 = 0)
 var _t_left: float = 0.0
 var _light_dur: float = 0.0
 var _cell: Vector2i
+const DIRS: Dictionary = {"mg_left": Vector2i.LEFT, "mg_right": Vector2i.RIGHT, "mg_up": Vector2i.UP, "mg_down": Vector2i.DOWN} # 칸 y가 커질수록 화면 아래
 var _target: Vector2i
 var _moving: bool = false
 var _step_acc: float = 0.0
@@ -80,19 +81,18 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not event is InputEventMouseButton:
-		return
-	var mb: InputEventMouseButton = event
-	if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
+	var d: Vector2i = Vector2i.ZERO
+	for dir: String in DIRS:
+		if event.is_action_pressed(dir): # 누를 때마다 한 칸. 꾹 눌러도 연속으로 가지 않는다
+			d = DIRS[dir]
+	if d == Vector2i.ZERO:
 		return
 	if _state == State.LIGHT:
 		_hint.text = "불이 켜져 있는 동안은 움직일 수 없다. 외우자!"
-	elif _state == State.DARK:
-		var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(_camera.project_ray_origin(mb.position), _camera.project_ray_normal(mb.position))
-		if hit != null:
-			_target = _cell_of(hit)
-			_moving = true
-			_step_acc = CONFIG.step_time # 바로 첫 걸음
+	elif _state == State.DARK and not _moving:
+		_target = _cell + d
+		_moving = true
+		_step_acc = CONFIG.step_time # 바로 걷는다. 방해물이면 _move가 막는다
 
 
 func _enter_light(duration: float, first: bool) -> void:
@@ -215,10 +215,6 @@ func _world(c: Vector2i) -> Vector3:
 
 func _pawn_pos(c: Vector2i) -> Vector3:
 	return _world(c) + Vector3(0.0, 0.45, 0.0)
-
-
-func _cell_of(p: Vector3) -> Vector2i:
-	return Vector2i(roundi(p.x / CELL + (OwlLevel.SIZE.x - 1) * 0.5), roundi(p.z / CELL + (OwlLevel.SIZE.y - 1) * 0.5))
 
 
 # --- 화면 ---

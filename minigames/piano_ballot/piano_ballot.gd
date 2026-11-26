@@ -2,7 +2,7 @@ extends Node3D
 ## 피아노표(id: piano_ballot). 컨베이어로 리듬에 맞춰 오는 표 중 반민초 표(빈 흰 종이)만 박자에 맞춰 찍는다. 민초 표는 민트 도장이 미리 찍혀 있다.
 ## 날 따라해봐요: 표마다 복사본이 뒤 레일을 왼쪽으로 흐르며 찍는 자리 맞은편을 지날 때 소리로 리듬을 보여 주고(보여 주기 마디),
 ## 정확히 한 마디 뒤 진짜 표가 같은 리듬으로 앞 레일의 찍는 자리에 온다(따라 하기 마디). 레일 끝은 화면 밖.
-## 감시자는 미리 소리와 함께 화면 가장자리에서 고개를 내밀고, 그 표가 올 때 상반신이 다 들어온다. 그 표를 찍으면 적발. 클릭 = 찍기.
+## 감시자는 미리 소리와 함께 화면 가장자리에서 고개를 내밀고, 그 표가 올 때 상반신이 다 들어온다. 그 표를 찍으면 적발. 클릭 또는 Space = 찍기.
 
 enum State { TUTORIAL, PLAYING, ENDED }
 
@@ -23,7 +23,7 @@ const CALL_WORD_POS: Vector3 = Vector3(0.0, 2.6, PREVIEW_Z) # 뒤 레일 가운�
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
 const INTRO_TEXT: String = "개표대를 지나가는 빈 반민초 표에 몰래 민트 도장을 찍는다. 반민초 표는 민초 표가 되어 개표될 것이다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "날 따라 해 봐요! 먼저 뒤쪽 레일로 표가 지나가며 리듬을 보여 줍니다. 이때는 듣기만 하세요.\n다음 마디에 같은 리듬으로 표가 앞쪽 틀에 들어옵니다. 그때 클릭해서 찍으세요!\n빈 표(반민초)만 찍으세요. 민트 도장이 있는 표(민초)는 그냥 보내세요.\n낮은 소리가 나면 감시자가 화면 끝에서 고개를 내밉니다. 감시자가 다 들어왔을 때 오는 표는 찍지 마세요!"
+const TUTORIAL_TEXT: String = "날 따라 해 봐요! 먼저 뒤쪽 레일로 표가 지나가며 리듬을 보여 줍니다. 이때는 듣기만 하세요.\n다음 마디에 같은 리듬으로 표가 앞쪽 틀에 들어옵니다. 그때 클릭하거나 Space를 눌러 찍으세요!\n빈 표(반민초)만 찍으세요. 민트 도장이 있는 표(민초)는 그냥 보내세요.\n낮은 소리가 나면 감시자가 화면 끝에서 고개를 내밉니다. 감시자가 다 들어왔을 때 오는 표는 찍지 마세요!"
 
 @export var id: StringName = &"piano_ballot"
 
@@ -179,10 +179,10 @@ func _place(b: MeshInstance3D, x: float, z: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _state != State.PLAYING or not event is InputEventMouseButton:
+	if _state != State.PLAYING:
 		return
-	var mb: InputEventMouseButton = event
-	if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
+	var click: bool = event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed
+	if not click and not event.is_action_pressed("mg_action"):
 		return
 	_press_stamper()
 	var i: int = _nearest_open()

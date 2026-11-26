@@ -4,6 +4,7 @@ extends CanvasLayer
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const WIDTH: float = 900.0
+const FOCUS_DELAY: float = 0.8
 
 
 ## 미니게임이 끝났을 때 host(미니게임 루트)에 붙여 띄운다. GameState.submit_result()를 먼저 호출해야 득표가 반영된다.
@@ -33,6 +34,8 @@ static func open(host: Node, rank: Grade.Rank, message: String, before_percent: 
 	box.add_child(button)
 	host.add_child(screen)
 	Tutorial.wrap_words(label, WIDTH)
+	# Space·Enter로도 누른다. 바로 잡으면 게임 중 연타하던 Space에 결과를 못 보고 넘어가서 조금 뒤에
+	screen.get_tree().create_timer(FOCUS_DELAY).timeout.connect(button.grab_focus)
 
 
 static func _label(text: String, font_size: int) -> Label:
