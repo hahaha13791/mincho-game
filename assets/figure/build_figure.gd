@@ -5,8 +5,8 @@ extends SceneTree
 ## 방식: 부위(구·캡슐)를 거리장(SDF)으로 부드럽게 이어 붙이고 surface nets로 메시화. 원점은 발바닥, +z가 앞.
 
 const H: float = 0.01 # 격자 간격(m). 작을수록 매끈하지만 느림
-const LO: Vector3 = Vector3(-0.45, -0.03, -0.38) # 뒤통수(-0.27)·머리띠 매듭(-0.35)까지 담는다
-const HI: Vector3 = Vector3(0.45, 1.95, 0.46)
+const LO: Vector3 = Vector3(-0.45, -0.03, -0.5) # 중절모 뒤 챙(-0.44)까지 담는다. 격자 밖은 잘려 구멍이 난다
+const HI: Vector3 = Vector3(0.45, 1.95, 0.5)
 const EDGES: Array = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]]
 
 
