@@ -310,6 +310,22 @@ func _build_visuals() -> void:
 	_wall(Vector3(WALL_T, BOX_H, BOX_D), Vector3(BOX_CENTER_X + side_x, mid_y, 0.0), box_color)
 	_wall(Vector3(BOX_W + 2.0 * WALL_T, WALL_T, BOX_D), Vector3(BOX_CENTER_X, FLOOR_Y - WALL_T / 2.0, 0.0), box_color)
 
+	# 바닥 벽 아래 장식 받침(충돌 없음). 바닥 벽 앞면과 이어진 앞면에 '투표함'을 크게 쓴다
+	var skirt_h: float = 0.8
+	var skirt: MeshInstance3D = _box(Vector3(BOX_W + 2.0 * WALL_T, skirt_h, BOX_D), box_color)
+	skirt.position = Vector3(BOX_CENTER_X, FLOOR_Y - WALL_T - skirt_h / 2.0, 0.0)
+	add_child(skirt)
+	var label: Label3D = Label3D.new()
+	label.text = "투표함"
+	label.font_size = 128
+	label.pixel_size = 0.0065
+	label.outline_size = 16
+	label.modulate = PALETTE.paper
+	label.outline_modulate = PALETTE.paper # 같은 색 외곽선으로 글씨를 굵게
+	label.shaded = false
+	label.position = Vector3(BOX_CENTER_X, FLOOR_Y - (WALL_T + skirt_h) / 2.0, BOX_D / 2.0 + 0.01)
+	add_child(label)
+
 	var back: MeshInstance3D = _box(Vector3(BOX_W, BOX_H, 0.2), box_color.darkened(0.3))
 	back.position = Vector3(BOX_CENTER_X, mid_y, -BOX_D / 2.0 + 0.1)
 	add_child(back)
