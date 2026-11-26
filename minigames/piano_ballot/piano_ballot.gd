@@ -31,6 +31,8 @@ const WATCHER_ENTRIES: Array[Dictionary] = [
 	{"edge": Vector2(1.0, 0.25), "angle": PI / 2.0 + 0.35}, # 오른쪽 옆에서 왼쪽 아래로
 	{"edge": Vector2(-1.0, -0.1), "angle": -PI / 2.0 - 0.3}, # 왼쪽 옆에서 오른쪽 아래로
 ]
+const CALL_WORD: String = "탁!" # 보여 주기 소리를 글자로
+const CALL_WORD_POS: Vector3 = Vector3(0.0, 2.6, PREVIEW_Z) # 뒤 레일 가운데 위. 화면에서 도장기 머리보다 위
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
 const TUTORIAL_TEXT: String = "날 따라해봐요! 먼저 뒤쪽 레일의 표가 가운데를 지나며 리듬을 들려줍니다. 듣기만 하세요.\n다음 마디에 같은 표가 같은 리듬으로 앞 레일의 찍는 틀에 옵니다. 그때 클릭!\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n낮은 소리와 함께 감시자가 화면 가장자리에서 고개를 내밀면, 감시자가 다 들어온 순간 오는 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
@@ -121,6 +123,7 @@ func _process(delta: float) -> void:
 		Beep.play(_sfx, 880.0) # 메트로놈: 4분음표마다
 	if _next_call < _beats.size() and now >= _beats[_next_call]["time"] - CALL_LAG:
 		Beep.play(_call_sfx, 523.0, 0.12) # 보여 주기: 뒤 레일 가운데를 지나는 표마다
+		_pop_word(CALL_WORD)
 		_next_call += 1
 	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - CONFIG.warn_beats:
 		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + WATCH_SHOW) * _beat_dur
@@ -160,6 +163,28 @@ func _watcher_rise(u: float) -> float:
 	if u <= WATCH_SHOW:
 		return 1.0
 	return 1.0 - (u - WATCH_SHOW) / up
+
+
+# 의성어가 톡 튀어나왔다가 떠오르며 사라진다. 빠른 리듬에서 겹쳐도 읽히게 좌우로 조금씩 흩뜨린다
+func _pop_word(text: String) -> void:
+	var label: Label3D = Label3D.new()
+	label.text = text
+	label.font_size = 112
+	label.pixel_size = 0.01
+	label.outline_size = 28
+	label.modulate = PALETTE.accent
+	label.outline_modulate = PALETTE.stamp
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true # 도장틀·레일에 가리지 않게
+	label.position = CALL_WORD_POS + Vector3(randf_range(-0.5, 0.5), 0.0, 0.0)
+	label.scale = Vector3.ZERO
+	add_child(label)
+	var t: Tween = create_tween()
+	t.tween_property(label, "scale", Vector3.ONE, 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_property(label, "position:y", label.position.y + 0.8, 0.45)
+	t.parallel().tween_property(label, "modulate:a", 0.0, 0.45)
+	t.parallel().tween_property(label, "outline_modulate:a", 0.0, 0.45)
+	t.tween_callback(label.queue_free)
 
 
 func _place(b: MeshInstance3D, x: float, z: float) -> void:
