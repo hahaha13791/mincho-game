@@ -16,6 +16,10 @@ extends Resource
 @export var belt: Color = Color("3a3b40") # 컨베이어 고무 벨트
 @export var stamp: Color = Color("2b2d33") # 기표 도장 몸통
 @export var iron_body: Color = Color("9aa3b0") # 다리미 몸체. 흰 종이 위에서 묻히지 않게 회색
+@export var cork: Color = Color("c9a273") # 작전본부실 코르크 보드
+@export var wood: Color = Color("7a5236") # 보드 액자·책상
+@export var memo: Color = Color("f7e38f") # 노란 메모지
+@export var yarn: Color = Color("c8403a") # 수사 보드 빨간 실
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")

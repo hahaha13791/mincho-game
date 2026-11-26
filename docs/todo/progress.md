@@ -18,7 +18,7 @@
 | 9 | 미친 쥐 | `mad_rat` | 구현. 판별 규칙(옷 색 기준, 모자 무시)은 내 제안이라 미확정 | `mad_rat_config.tres` | `minigames/mad_rat/test_rules.gd` |
 
 공통(`common/`): `game_state.gd`(득표·등급), `grade.gd`, `vote_config.tres`(등급별 득표 `+7 / +3.5 / −3`, 점수 `3/2/0`), `result_screen.gd`, `tutorial.gd`(공통 튜토리얼 틀), `final_rules.gd`(승패·칭호), `leaderboard.gd`(저장·순위), `idle_return.gd`(오토로드, 90초 무입력 시 타이틀 복귀), `watcher.tscn`(2번·5번 공용 감시자 임시 모양), `flow.gd`(화면 전환).
-화면(`main/`): `title`, `hub`(3×3, 가운데 = 개표 당일, 8번째 칸은 "준비 중"), `final_count`, `leaderboard`, `minigame_list.tres`.
+화면(`main/`): `title`, `hub`(코르크 수사 보드: 메모 6장 고정 자유 배치 + 빨간 실 + 가운데 개표 당일 카드. 책상·주인공은 진행 중), `final_count`, `leaderboard`, `minigame_list.tres`.
 오토로드: `GameState`, `Flow`, `IdleReturn`. 시작 씬: `main/title.tscn`.
 
 미니게임 구조는 모두 같다: `Tutorial.open(self, 설명, _start)` → 플레이 → `GameState.submit_result(id, rank)` → `ResultScreen.open(...)`. 수치는 설정 리소스, 판정은 `*_rules.gd`(순수 로직), 겉모습은 `_build_visuals()`나 서브씬에 모은다.
@@ -29,7 +29,7 @@
 2. **수치와 규칙 조정**: 미니게임별 난이도, 등급별 득표 변화, 칭호 조건, 자동 복귀 시간. 3개 등급이 모두 나올 수 있는지 확인
 3. **정해야 할 것** (아래 "결정 대기")
 4. **디자인 단계**: 화풍·팔레트 확정, 인물 모델링(`villager.tscn`, `watcher.tscn` 안의 모델만 교체), 에셋(Kenney/Quaternius/KayKit), 효과음·배경음, 그림/움직임 튜토리얼, 허브 연출, 칭호 카드
-5. **기획서 갱신**: `docs/기획서.md`에는 3×3 격자, 8번 임시안, 득표 수치 변경, 리더보드 방식(이름 자동)이 아직 없다. 전시 제출 전에 반영
+5. **기획서 갱신**: `docs/기획서.md`에는 작전본부실 수사 보드, 8번 임시안, 득표 수치 변경, 리더보드 방식(이름 자동)이 아직 없다. 전시 제출 전에 반영
 
 ## 결정 대기 (사용자가 정해야 함)
 

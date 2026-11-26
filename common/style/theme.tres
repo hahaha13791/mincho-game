@@ -1,4 +1,10 @@
-[gd_resource type="Theme" format=3]
+[gd_resource type="Theme" load_steps=2 format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/NanumPenScript-Regular.ttf" id="1"]
 
 [resource]
 default_font_size = 28
+HandLabel/base_type = &"Label"
+HandLabel/colors/font_color = Color(0.17, 0.15, 0.14, 1)
+HandLabel/font_sizes/font_size = 46
+HandLabel/fonts/font = ExtResource("1")
