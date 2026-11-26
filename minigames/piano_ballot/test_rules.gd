@@ -25,6 +25,7 @@ func _init() -> void:
 		for i in b.size():
 			var t: float = b[i]["time"]
 			sorted_ok = sorted_ok and (i == 0 or t > b[i - 1]["time"])
+			_check(not PianoRules.is_call(floori(t / 4.0)), "보여 주기 마디에는 찍을 표가 없음")
 			if t < cfg.vary_from * 4.0:
 				early_ok = early_ok and b[i]["anti"] and not b[i]["watcher"] and is_equal_approx(t, roundf(t))
 			if b[i]["watcher"]:
@@ -35,7 +36,8 @@ func _init() -> void:
 		_check(early_ok, "초반은 정박의 반민초 표, 감시자 없음")
 		_check(watch_gap_ok, "감시자 표는 옆 표와 충분히 떨어짐")
 		for m in cfg.measures:
-			_check(watch_per_measure[m] == (1 if m >= cfg.watch_from else 0), "감시자는 %d마디부터 마디마다 하나 (%d마디)" % [cfg.watch_from, m])
+			var want: int = 1 if m >= cfg.watch_from and (m - cfg.watch_from) % cfg.watch_every == 0 else 0
+			_check(watch_per_measure[m] == want, "감시자는 %d마디부터 %d마디마다 하나 (%d마디)" % [cfg.watch_from, cfg.watch_every, m])
 	var sample: Array[Dictionary] = [{"time": 0.0}, {"time": 1.0}, {"time": 1.25}, {"time": 3.0}]
 	var g: PackedFloat32Array = PianoRules.half_gaps(sample)
 	_check(is_equal_approx(g[0], 0.5) and is_equal_approx(g[1], 0.125) and is_equal_approx(g[2], 0.125) and is_equal_approx(g[3], 0.875), "판정 간격은 가까운 옆 표 간격의 절반")

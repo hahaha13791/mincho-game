@@ -4,7 +4,7 @@ extends Node3D
 ## 반복 부품(줄무늬·롤러·다리)이 많아 씬 대신 코드로 배치한다. 색은 팔레트에서만 가져온다.
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
-const LENGTH: float = 22.0
+const LENGTH: float = 12.0 # 피아노표 고리 길이와 맞물린다: 뒤 레일 가운데 → 앞 레일 찍는 자리 = LENGTH = 1마디
 const WIDTH: float = 1.6
 const STRIPE_GAP: float = 1.0
 const ROLLER_GAP: float = 0.5

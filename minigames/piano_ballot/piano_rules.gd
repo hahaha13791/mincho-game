@@ -8,6 +8,8 @@ const WATCH_MIN_GAP: float = 0.5 # 감시자 표는 앞뒤 표와 이 박 이상
 static func build(cfg: PianoConfig, rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for m in cfg.measures:
+		if is_call(m):
+			continue # 보여 주기 마디: 다음 마디 표가 뒤 레일에서 리듬을 보여 준다. 앞 레일은 쉰다
 		var pool: Array[PackedFloat32Array] = cfg.patterns_basic
 		if m >= cfg.fast_from:
 			pool = cfg.patterns_vary + cfg.patterns_fast
@@ -25,6 +27,11 @@ static func build(cfg: PianoConfig, rng: RandomNumberGenerator) -> Array[Diction
 		if not picks.is_empty():
 			out[picks[rng.randi() % picks.size()]]["watcher"] = true
 	return out
+
+
+## 날 따라해봐요: 짝수 마디는 보여 주기, 홀수 마디는 따라 하기
+static func is_call(measure: int) -> bool:
+	return measure % 2 == 0
 
 
 ## 표마다 가장 가까운 옆 표와의 간격의 절반(박). 판정 허용 오차가 옆 표와 겹치지 않게 하는 데 쓴다

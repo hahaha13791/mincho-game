@@ -1,6 +1,7 @@
 extends Node3D
 ## 피아노표(id: piano_ballot). 컨베이어로 리듬에 맞춰 오는 표 중 반민초 표(빈 흰 종이)만 박자에 맞춰 찍는다. 민초 표는 민트 도장이 미리 찍혀 있다.
-## 표는 고리처럼 돈다: 뒤쪽 미리보기 레일을 왼쪽으로 흐르다가 왼쪽 끝에서 앞 레일로 넘어와 찍는 자리로 온다. 미리보기 레일에서 리듬을 미리 본다.
+## 날 따라해봐요: 표는 고리처럼 돈다. 뒤 레일을 왼쪽으로 흐르며 찍는 자리 맞은편을 지날 때 소리로 리듬을 보여 주고(보여 주기 마디),
+## 왼쪽 끝에서 앞 레일로 넘어와 정확히 한 마디 뒤 같은 리듬으로 찍는 자리에 온다(따라 하기 마디).
 ## 감시자는 한 박자 전에 소리와 화면으로 예고하며, 그 표를 찍으면 적발. 클릭 = 찍기.
 
 enum State { TUTORIAL, PLAYING, ENDED }
@@ -14,11 +15,12 @@ const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
 const SPACING: float = 3.0 # 한 박 동안 표가 가는 거리. 16분(0.25박) 간격 0.75가 표 폭보다 넓게
 const BALLOT_SIZE: Vector3 = Vector3(0.66, 0.06, 1.0) # 흐르는 방향(x)으로 좁은 쪽지
 const BELT_END: float = Conveyor.LENGTH / 2.0 # 레일 끝. 여기서 미리보기 레일 → 앞 레일로 넘어온다
+const CALL_LAG: float = 4.0 # 뒤 레일 가운데 → 찍는 자리 = 1마디. 고리 길이(2 × BELT_END)가 SPACING × 이 값과 같아야 한다
 const PREVIEW_Z: float = -2.6 # 미리보기 레일(뒤쪽, 반대 방향)
 const WATCH_SHOW: float = 0.4 # 감시자 표 앞뒤로 감시자가 서 있는 시간(박)
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
-const TUTORIAL_TEXT: String = "표가 리듬에 맞춰 컨베이어를 타고 옵니다. 중앙의 찍는 틀에 닿는 순간 클릭하세요.\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n뒤쪽 레일에 곧 올 표가 반대로 먼저 지나갑니다. 리듬을 미리 보세요!\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 한 박자 뒤 그 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
+const TUTORIAL_TEXT: String = "날 따라해봐요! 먼저 뒤쪽 레일의 표가 가운데를 지나며 리듬을 들려줍니다. 듣기만 하세요.\n다음 마디에 같은 표가 같은 리듬으로 앞 레일의 찍는 틀에 옵니다. 그때 클릭!\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 한 박자 뒤 그 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
 
 @export var id: StringName = &"piano_ballot"
 
@@ -27,6 +29,8 @@ var _beats: Array[Dictionary] = [] # 표 목록(시간순). PianoRules.build 참
 var _windows: PackedFloat32Array = PackedFloat32Array() # 표마다 판정 허용 오차(초)
 var _watch_list: Array[int] = [] # 감시자 표 번호(시간순)
 var _next_warn: int = 0
+var _next_call: int = 0 # 다음에 뒤 레일 가운데를 지날 표
+var _call_sfx: AudioStreamPlayer # 보여 주기 소리. 메트로놈과 겹쳐도 끊기지 않게 따로
 var _resolved: Array[bool] = []
 var _ballots: Array[MeshInstance3D] = []
 var _beat_dur: float
@@ -51,8 +55,11 @@ func _ready() -> void:
 	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, -0.8)) # 약 30도. 컨베이어 옆면(롤러)과 뒤 미리보기 레일이 보이게
 	_beat_dur = 60.0 / CONFIG.bpm
 	_first = CONFIG.count_in * _beat_dur
+	assert(is_equal_approx(2.0 * BELT_END, SPACING * CALL_LAG), "고리 길이가 1마디와 안 맞음: Conveyor.LENGTH 또는 SPACING 확인")
 	_sfx = AudioStreamPlayer.new()
 	add_child(_sfx)
+	_call_sfx = AudioStreamPlayer.new()
+	add_child(_call_sfx)
 	_build_visuals()
 	Tutorial.open(self, TUTORIAL_TEXT, _start)
 
@@ -92,6 +99,9 @@ func _process(delta: float) -> void:
 	var now: float = (_t - _first) / _beat_dur # 지금이 몇 박째인가 (0박이 찍는 지점에 닿는 순간 = 0)
 	if floori(now) > floori((prev - _first) / _beat_dur):
 		Beep.play(_sfx, 880.0) # 메트로놈: 4분음표마다
+	if _next_call < _beats.size() and now >= _beats[_next_call]["time"] - CALL_LAG:
+		Beep.play(_call_sfx, 523.0, 0.12) # 보여 주기: 뒤 레일 가운데를 지나는 표마다
+		_next_call += 1
 	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - 1.0:
 		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + 0.5) * _beat_dur
 		Beep.play(_sfx, 330.0)
@@ -233,6 +243,9 @@ func _build_visuals() -> void:
 	var frame: MeshInstance3D = _box(Vector3(BALLOT_SIZE.x + 0.3, 0.02, 1.4), PALETTE.accent)
 	frame.position.y = 0.06
 	add_child(frame)
+	var call_frame: MeshInstance3D = _box(Vector3(BALLOT_SIZE.x + 0.3, 0.02, 1.4), PALETTE.accent.lightened(0.5)) # 보여 주기 지점(뒤 레일 가운데)
+	call_frame.position = Vector3(0.0, 0.06, PREVIEW_Z)
+	add_child(call_frame)
 
 	_stamper = STAMP.instantiate()
 	_stamper.position = Vector3(0.0, STAMPER_REST_Y, 0.0)
