@@ -30,16 +30,19 @@ const SHAPES: Array = [
 	[Rect2(-0.75, -0.5, 1.5, 1.0)],
 	[Rect2(-0.75, -0.25, 1.5, 0.5), Rect2(-0.75, -0.25, 0.5, 1.25)],
 ]
-const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵쿵 소리가 나면 참관인이 곧 도착합니다. 그 전에 [뚜껑 닫기]!\n참관인은 여러 번 옵니다. 뚜껑이 열려 있으면 들킵니다.\n선을 넘게 쌓으면 뚜껑이 닫히지 않고, 마지막 방문 때 목표 장수가 안 되면 들킵니다."
+const THUMPS: int = 3 # 도착 예고 발소리 수. 하나씩 늘어난다
+const THUMP_GAP: float = 0.8 # 발소리 간격. 마지막 쿵 → 도착 = warn_lead - (THUMPS - 1) × 이 값
+const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨어뜨려 쌓으세요.\n쿵, 쿵, 쿵 발소리가 세 번 나면 참관인이 도착합니다. 그 전에 [뚜껑 닫기]!\n참관인은 여러 번 옵니다. 뚜껑이 열려 있으면 들킵니다.\n선을 넘게 쌓으면 뚜껑이 닫히지 않습니다. 마지막 방문 때 10장은 있어야 하고, 12장이면 대성공!"
 
 @export var id: StringName = &"ballot_box"
-@export var target_papers: int = 6
+@export var perfect_papers: int = 12 # 이 장수 이상 + 여유 있게 닫으면 완전범죄
+@export var success_papers: int = 10 # 이 장수 미만이면 적발
 @export var initial_papers: int = 2 # 시작 때 상자 안에 들어 있는 표
 @export var visit_count: int = 3
 @export var first_visit: float = 8.0 # 첫 도착 시각(초)
 @export var visit_gap: float = 8.0 # 방문 간격
 @export var visit_jitter: float = 3.0 # 도착 시각에 더하는 랜덤(0~이 값)
-@export var warn_lead: float = 2.0 # 발소리 → 도착
+@export var warn_lead: float = 3.0 # 첫 발소리 → 도착
 @export var stay: float = 2.0 # 도착 후 머무는 시간. 이동안 뚜껑을 못 연다
 @export var safe_margin: float = 1.0 # 도착 전 이 시간 이상 남기고 닫으면 완전범죄
 
@@ -57,12 +60,16 @@ var _min_margin: float = INF
 var _lid_tween: Tween
 var _lid: MeshInstance3D
 var _observer: Watcher # 참관인은 공용 감시자 모습을 쓴다
+var _thump_key: int = -1 # 마지막으로 소리 낸 (방문 번호, 발소리 번호). 같은 쿵을 두 번 울리지 않게
+var _sfx: AudioStreamPlayer
 
 @onready var _camera: Camera3D = $Camera3D
 
 
 func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-35.0, 20.0, 0.0)
+	_sfx = AudioStreamPlayer.new()
+	add_child(_sfx)
 	_build_visuals()
 	for i in initial_papers: # 상자 안에 미리 들어 있는 표. 시작 전에 물리로 자리잡는다
 		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + 1.0 + i * 1.6, 0.0))
@@ -93,11 +100,17 @@ func _process(delta: float) -> void:
 func _move_observer() -> void:
 	var x: float = OBSERVER_FROM_X
 	var warning: bool = false
-	for a in _visits:
-		var t: float = _elapsed - (a - warn_lead)
+	for vi in _visits.size():
+		var t: float = _elapsed - (_visits[vi] - warn_lead)
 		if t >= 0.0 and t < warn_lead + stay + LEAVE_TIME:
 			x = lerpf(OBSERVER_FROM_X, OBSERVER_TO_X, clampf(t / warn_lead, 0.0, 1.0) - clampf((t - warn_lead - stay) / LEAVE_TIME, 0.0, 1.0))
 			warning = t < warn_lead
+			if warning: # 쿵 → 쿵 쿵 → 쿵 쿵 쿵. 마지막 쿵 뒤 조금 쉬고 도착
+				var n: int = mini(floori(t / THUMP_GAP) + 1, THUMPS)
+				$HUD/AlertLabel.text = "쿵…  ".repeat(n).strip_edges()
+				if vi * 10 + n != _thump_key:
+					_thump_key = vi * 10 + n
+					Beep.play(_sfx, 70.0, 0.25)
 	var dx: float = x - _observer.position.x
 	_observer.set_walking(absf(dx) > 0.0001)
 	if absf(dx) > 0.0001:
@@ -176,7 +189,7 @@ func _set_lid(closed: bool) -> void:
 # 마지막 방문이 끝났을 때: 뚜껑은 닫혀 있고, 장수가 목표를 채웠는지 본다
 func _finish() -> void:
 	var inside: Array[BallotPaper] = _in_box()
-	var rank: Grade.Rank = BallotBoxRules.judge(inside.size(), target_papers, false, _min_margin, safe_margin)
+	var rank: Grade.Rank = BallotBoxRules.judge(inside.size(), perfect_papers, success_papers, false, _min_margin, safe_margin)
 	var msg: String
 	match rank:
 		Grade.Rank.PERFECT:
@@ -258,7 +271,7 @@ func _overflows(inside: Array[BallotPaper]) -> bool:
 
 func _refresh() -> void:
 	var inside: Array[BallotPaper] = _in_box()
-	$HUD/FillLabel.text = "%d / %d장%s" % [inside.size(), target_papers, "  (선 넘음!)" if _overflows(inside) else ""]
+	$HUD/FillLabel.text = "%d / %d장 (최소 %d)%s" % [inside.size(), perfect_papers, success_papers, "  (선 넘음!)" if _overflows(inside) else ""]
 
 
 # --- 화면 ---

@@ -119,9 +119,9 @@ func _unhandled_input(event: InputEvent) -> void:
 func _tick(b: int) -> void:
 	if b + 1 >= 0 and b + 1 < _beats.size() and _beats[b + 1]["watcher"]:
 		_warn_until = _first + (b + 1) * _beat_dur + _beat_dur * 0.5
-		_beep(330.0)
+		Beep.play(_sfx, 330.0)
 	else:
-		_beep(880.0)
+		Beep.play(_sfx, 880.0)
 
 
 func _mistake(msg: String) -> void:
@@ -160,23 +160,6 @@ func _press_stamper() -> void:
 	_stamp_tween = create_tween()
 	_stamp_tween.tween_property(_stamper, "position:y", STAMPER_PRESS_Y, 0.04)
 	_stamp_tween.tween_property(_stamper, "position:y", STAMPER_REST_Y, 0.12)
-
-
-# --- 소리 (에셋 없이 코드로 만든 삐 소리. 정식 효과음이 생기면 교체) ---
-
-func _beep(freq: float) -> void:
-	var rate: int = 22050
-	var n: int = int(rate * 0.07)
-	var data: PackedByteArray = PackedByteArray()
-	data.resize(n * 2)
-	for i in n:
-		data.encode_s16(i * 2, int(sin(TAU * freq * i / rate) * 12000.0 * (1.0 - float(i) / n)))
-	var w: AudioStreamWAV = AudioStreamWAV.new()
-	w.format = AudioStreamWAV.FORMAT_16_BITS
-	w.mix_rate = rate
-	w.data = data
-	_sfx.stream = w
-	_sfx.play()
 
 
 # --- 화면 ---
