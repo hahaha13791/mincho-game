@@ -1,10 +1,10 @@
 class_name MadRatRules
 extends RefCounted
 
-enum Dir { LEFT, RIGHT } # LEFT = 투표소, RIGHT = 저수지
+enum Dir { LEFT, RIGHT } # LEFT = 투표소, RIGHT = 민트초코 아이스크림가게
 
 
-## 옷 색이 기준이다(모자는 무시). 민초는 투표소로, 반민초는 저수지로 보낸다
+## 옷 색이 기준이다(모자는 무시). 민초는 투표소로, 반민초는 아이스크림가게로 보낸다
 static func is_correct(is_mincho: bool, dir: Dir) -> bool:
 	return (dir == Dir.LEFT) == is_mincho
 
