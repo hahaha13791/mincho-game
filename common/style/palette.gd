@@ -8,6 +8,8 @@ extends Resource
 @export var paper: Color = Color("faf7f0")
 @export var doll: Color = Color("f4f4f1") # 얼굴 없는 하얀 인형(인물 기본 몸)
 @export var road: Color = Color("9c9488") # 길. 하얀 인형이 묻히지 않게 어둡게
+@export var furniture: Color = Color("a89f91") # 책상·칸막이 같은 가구
+@export var cardboard: Color = Color("d4b98c") # 상자. 반민초 갈색과 헷갈리지 않게 밝게
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")

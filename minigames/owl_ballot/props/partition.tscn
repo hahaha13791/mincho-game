@@ -1,0 +1,45 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://minigames/owl_ballot/props/owl_prop.gd" id="1"]
+
+[sub_resource type="BoxMesh" id="panel_a"]
+size = Vector3(2.3, 1.6, 0.24)
+
+[sub_resource type="BoxMesh" id="panel_b"]
+size = Vector3(0.24, 1.6, 1.75)
+
+[sub_resource type="BoxMesh" id="foot_x"]
+size = Vector3(0.12, 0.15, 0.5)
+
+[sub_resource type="BoxMesh" id="foot_z"]
+size = Vector3(0.5, 0.15, 0.12)
+
+[sub_resource type="BoxMesh" id="notice"]
+size = Vector3(0.5, 0.65, 0.02)
+
+[node name="Partition" type="Node3D"]
+script = ExtResource("1")
+
+[node name="WoodPanelA" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.95, 0)
+mesh = SubResource("panel_a")
+
+[node name="WoodPanelB" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0.925)
+mesh = SubResource("panel_b")
+
+[node name="FrameFootA1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 0.075, 0)
+mesh = SubResource("foot_x")
+
+[node name="FrameFootA2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.65, 0.075, 0)
+mesh = SubResource("foot_x")
+
+[node name="FrameFootB" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.075, 1.7)
+mesh = SubResource("foot_z")
+
+[node name="PaperNotice" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0, 1.1, 0.13)
+mesh = SubResource("notice")

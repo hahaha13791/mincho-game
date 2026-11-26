@@ -2,7 +2,7 @@ class_name OwlConfig
 extends Resource
 ## 올빼미표 수치. 플레이 테스트로 여기서만 조정한다.
 
-@export var cycles: int = 5 ## 불이 꺼지는 횟수. 이 안에 투표함을 다 처리해야 함
+@export var cycles: int = 6 ## 불이 꺼지는 횟수. 이 안에 투표함을 다 처리해야 함
 @export var first_light: float = 4.0 ## 처음 외우는 시간(초)
 @export var light_time: float = 2.5 ## 이후 불이 켜져 있는 시간
 @export var dark_time: float = 3.5 ## 불이 꺼져 있는(이동 가능한) 시간

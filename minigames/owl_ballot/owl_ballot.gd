@@ -8,6 +8,12 @@ const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: OwlConfig = preload("res://minigames/owl_ballot/owl_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const CELL: float = 1.2
+## 엄폐물 겉모습 서브씬. 기준 칸이 원점, 회전 전 모양은 +x(열)·+z(행) 방향으로 뻗는다
+const PROPS: Dictionary = {
+	&"crates": preload("res://minigames/owl_ballot/props/crates.tscn"),
+	&"table": preload("res://minigames/owl_ballot/props/table.tscn"),
+	&"partition": preload("res://minigames/owl_ballot/props/partition.tscn"),
+}
 const TUTORIAL_TEXT: String = "불이 켜진 동안 방해물, 투표함(파랑), 감시자의 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동합니다. 가로로 먼저, 세로로 걸어가며 방해물에서 멈춥니다.\n투표함 칸에 들어가면 손을 쓴 것입니다. 전부 처리하면 성공!\n불이 켜지는 순간 감시자 시야에 있으면 들킵니다. 깜빡이면 곧 전환됩니다. 감시자는 일정한 순서로 움직입니다."
 
 @export var id: StringName = &"owl_ballot"
@@ -90,7 +96,7 @@ func _enter_light(duration: float, first: bool) -> void:
 	_t_left = duration
 	_moving = false
 	_set_lit(true, true)
-	var seen: Array[Vector2i] = OwlRules.all_vision(OwlLevel.MAP, OwlLevel.WATCHERS, _cycle)
+	var seen: Array[Vector2i] = OwlRules.all_vision(OwlLevel.map(), OwlLevel.WATCHERS, _cycle)
 	for c in _vision_tiles:
 		_vision_tiles[c].visible = seen.has(c)
 	for i in _watchers.size():
@@ -134,7 +140,7 @@ func _move(delta: float) -> void:
 			_moving = false
 			break
 		var next: Vector2i = _cell + d
-		if OwlRules.is_wall(OwlLevel.MAP, next):
+		if OwlRules.is_wall(OwlLevel.map(), next):
 			_moving = false
 			_hint.text = "쿵! 방해물이다."
 			break
@@ -164,7 +170,7 @@ func _finish(ok: bool, msg: String) -> void:
 
 
 func _world(c: Vector2i) -> Vector3:
-	return Vector3((c.x - 4) * CELL, 0.0, (c.y - 3) * CELL)
+	return Vector3((c.x - (OwlLevel.SIZE.x - 1) * 0.5) * CELL, 0.0, (c.y - (OwlLevel.SIZE.y - 1) * 0.5) * CELL)
 
 
 func _pawn_pos(c: Vector2i) -> Vector3:
@@ -172,7 +178,7 @@ func _pawn_pos(c: Vector2i) -> Vector3:
 
 
 func _cell_of(p: Vector3) -> Vector2i:
-	return Vector2i(roundi(p.x / CELL) + 4, roundi(p.z / CELL) + 3)
+	return Vector2i(roundi(p.x / CELL + (OwlLevel.SIZE.x - 1) * 0.5), roundi(p.z / CELL + (OwlLevel.SIZE.y - 1) * 0.5))
 
 
 # --- 화면 ---
@@ -212,10 +218,8 @@ func _build_visuals() -> void:
 	we.environment = _env
 	add_child(we)
 
-	var rows: int = OwlLevel.MAP.size()
-	var cols: int = OwlLevel.MAP[0].length()
-	for r in rows:
-		for c in cols:
+	for r in OwlLevel.SIZE.y:
+		for c in OwlLevel.SIZE.x:
 			var cell: Vector2i = Vector2i(c, r)
 			var tile: MeshInstance3D = _box(Vector3(CELL * 0.94, 0.1, CELL * 0.94), PALETTE.paper)
 			tile.position = _world(cell) + Vector3(0.0, -0.05, 0.0)
@@ -225,10 +229,15 @@ func _build_visuals() -> void:
 			sight.visible = false
 			_props.add_child(sight)
 			_vision_tiles[cell] = sight
-			if OwlLevel.MAP[r][c] == "#":
-				var wall: MeshInstance3D = _box(Vector3(CELL * 0.9, 0.9, CELL * 0.9), PALETTE.iron)
-				wall.position = _world(cell) + Vector3(0.0, 0.45, 0.0)
-				_props.add_child(wall)
+	for piece in OwlLevel.PIECES:
+		var prop: Node3D = PROPS[piece["kind"]].instantiate()
+		prop.position = _world(piece["at"])
+		prop.rotation.y = -int(piece["rot"]) * PI * 0.5 # 칸 회전 (x, y) -> (-y, x)과 같은 방향
+		_props.add_child(prop)
+		for c in OwlLevel.cells(piece): # 막힌 칸 바닥을 어둡게 해 모양이 얇은 물건도 칸이 보이게
+			var shade: MeshInstance3D = _box(Vector3(CELL * 0.94, 0.012, CELL * 0.94), PALETTE.furniture.lightened(0.15))
+			shade.position = _world(c) + Vector3(0.0, 0.006, 0.0)
+			_props.add_child(shade)
 	for b in OwlLevel.BOXES:
 		var bm: MeshInstance3D = _box(Vector3(CELL * 0.6, 0.6, CELL * 0.6), PALETTE.ballot_box)
 		bm.position = _world(b) + Vector3(0.0, 0.3, 0.0)

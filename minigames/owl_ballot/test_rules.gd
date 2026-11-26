@@ -15,7 +15,7 @@ func _solvable(cfg: OwlConfig) -> bool:
 	var steps: int = int(cfg.dark_time / cfg.step_time)
 	var states: Dictionary = {[OwlLevel.START, 0]: true} # [칸, 처리한 투표함 비트마스크]
 	for cycle in range(1, cfg.cycles + 1):
-		var seen: Array[Vector2i] = OwlRules.all_vision(OwlLevel.MAP, OwlLevel.WATCHERS, cycle)
+		var seen: Array[Vector2i] = OwlRules.all_vision(OwlLevel.map(), OwlLevel.WATCHERS, cycle)
 		var frontier: Dictionary = states.duplicate()
 		var reach: Dictionary = states.duplicate()
 		for s in steps:
@@ -23,7 +23,7 @@ func _solvable(cfg: OwlConfig) -> bool:
 			for k in frontier:
 				for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 					var c: Vector2i = k[0] + d
-					if OwlRules.is_wall(OwlLevel.MAP, c):
+					if OwlRules.is_wall(OwlLevel.map(), c):
 						continue
 					var mask: int = k[1]
 					var bi: int = OwlLevel.BOXES.find(c)
@@ -44,18 +44,40 @@ func _solvable(cfg: OwlConfig) -> bool:
 	return false
 
 
+# 엄폐물이 맵 안에 있고, 서로 겹치지 않고, 시작점·투표함·감시자 자리를 덮지 않는다
+func _check_pieces(map: Array[String]) -> void:
+	var used: Dictionary = {}
+	for p in OwlLevel.PIECES:
+		for c in OwlLevel.cells(p):
+			_check(c.x >= 0 and c.y >= 0 and c.x < OwlLevel.SIZE.x and c.y < OwlLevel.SIZE.y, "엄폐물이 맵 밖 %s" % c)
+			_check(not used.has(c), "엄폐물 겹침 %s" % c)
+			used[c] = true
+	var keep: Array[Vector2i] = [OwlLevel.START]
+	keep.append_array(OwlLevel.BOXES)
+	for wd in OwlLevel.WATCHERS:
+		for c in wd["path"]:
+			keep.append(c)
+	for c in keep:
+		_check(not OwlRules.is_wall(map, c), "엄폐물이 막으면 안 되는 칸 %s" % c)
+
+
 func _init() -> void:
-	var map: Array[String] = OwlLevel.MAP
-	_check(OwlRules.is_wall(map, Vector2i(1, 1)), "방해물은 벽")
+	var map: Array[String] = OwlLevel.map()
+	_check(map.size() == OwlLevel.SIZE.y and map[0].length() == OwlLevel.SIZE.x, "맵 크기")
+	var l_cells: Array[Vector2i] = OwlLevel.cells({"kind": &"partition", "at": Vector2i(10, 1), "rot": 1})
+	_check(l_cells == [Vector2i(10, 1), Vector2i(10, 2), Vector2i(9, 1)], "ㄱ자 회전")
+	_check(OwlRules.is_wall(map, Vector2i(3, 1)), "엄폐물 칸은 벽")
 	_check(OwlRules.is_wall(map, Vector2i(-1, 0)), "맵 밖은 벽")
 	_check(not OwlRules.is_wall(map, Vector2i(0, 0)), "바닥은 벽 아님")
-	var w: Dictionary = OwlRules.watcher_at(OwlLevel.WATCHERS[0]["path"], 0)
-	_check(w["pos"] == Vector2i(5, 0) and w["dir"] == Vector2i(0, 1), "감시자 첫 위치와 방향")
-	_check(OwlRules.watcher_at(OwlLevel.WATCHERS[0]["path"], 6)["pos"] == Vector2i(5, 0), "경로는 순환")
+	_check_pieces(map)
+	var path0: Array = OwlLevel.WATCHERS[0]["path"]
+	var w: Dictionary = OwlRules.watcher_at(path0, 0)
+	_check(w["pos"] == path0[0] and w["dir"] == Vector2i((path0[1] - path0[0]).sign()), "감시자 첫 위치와 방향")
+	_check(OwlRules.watcher_at(path0, path0.size())["pos"] == path0[0], "경로는 순환")
 	var v: Array[Vector2i] = OwlRules.vision(map, Vector2i(5, 0), Vector2i(0, 1), 2)
 	_check(v == [Vector2i(5, 0), Vector2i(5, 1), Vector2i(5, 2)], "시야는 감시자 칸 + range칸")
-	var blocked: Array[Vector2i] = OwlRules.vision(map, Vector2i(4, 0), Vector2i(0, 1), 3)
-	_check(blocked == [Vector2i(4, 0)], "방해물에서 시야가 끊김")
+	var blocked: Array[Vector2i] = OwlRules.vision(map, Vector2i(3, 0), Vector2i(0, 1), 3)
+	_check(blocked == [Vector2i(3, 0)], "엄폐물에서 시야가 끊김")
 	_check(not OwlRules.is_near(Vector2i(7, 0), v), "시야에서 두 칸 떨어지면 들킬 뻔한 것 아님")
 	_check(OwlRules.is_near(Vector2i(6, 1), v), "시야 바로 옆은 들킬 뻔함")
 	_check(OwlRules.judge(false, false) == Grade.Rank.CAUGHT, "미완료는 적발")
