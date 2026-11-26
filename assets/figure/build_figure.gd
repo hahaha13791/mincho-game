@@ -1,5 +1,6 @@
 extends SceneTree
-## 얼굴 없는 하얀 인형 메시(body.res)와 셔츠 메시(shirt.res)를 만든다. 모양을 고치면 다시 실행한다.
+## 얼굴 없는 하얀 인형(body), 반팔 셔츠(shirt), 야구 모자(hat)의 모양을 OBJ로 src/에 내보낸다.
+## 그다음 src/rig_figure.py(블렌더)가 뼈대·걷기 애니메이션을 붙여 figure.glb를 만든다. 모양을 고치면 둘 다 다시 실행한다.
 ## 실행: godot --headless --path . -s res://assets/figure/build_figure.gd
 ## 방식: 부위(구·캡슐)를 거리장(SDF)으로 부드럽게 이어 붙이고 surface nets로 메시화. 원점은 발바닥, +z가 앞.
 
@@ -10,9 +11,9 @@ const EDGES: Array = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5
 
 
 func _init() -> void:
-	_build(_body, "res://assets/figure/body.res")
-	_build(_shirt, "res://assets/figure/shirt.res")
-	_build(_hat, "res://assets/figure/hat.res")
+	_build(_body, "res://assets/figure/src/body.obj")
+	_build(_shirt, "res://assets/figure/src/shirt.obj")
+	_build(_hat, "res://assets/figure/src/hat.obj")
 	quit()
 
 
@@ -135,11 +136,7 @@ func _build(sdf: Callable, path: String) -> void:
 				vid[i + n.x * (j + n.y * k)] = verts.size()
 				verts.append(LO + (Vector3(i, j, k) + sum / hits) * H)
 
-	var st: SurfaceTool = SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for v in verts:
-		st.set_normal(_grad(sdf, v))
-		st.add_vertex(v)
+	var tris: PackedInt32Array = PackedInt32Array()
 	# 부호가 바뀌는 격자 모서리마다 그 모서리를 둘러싼 4칸의 꼭짓점으로 사각형
 	var axes: Array[Vector3i] = [Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, 1)]
 	for k in n.z:
@@ -166,20 +163,24 @@ func _build(sdf: Callable, path: String) -> void:
 						ids.append(id)
 					if ids.size() < 4:
 						continue
-					_tri(st, sdf, verts, ids[0], ids[1], ids[2])
-					_tri(st, sdf, verts, ids[0], ids[2], ids[3])
-	var mesh: ArrayMesh = st.commit()
-	var err: Error = ResourceSaver.save(mesh, path)
-	print("%s: %d verts, save %s" % [path, verts.size(), error_string(err)])
+					_tri(tris, sdf, verts, ids[0], ids[1], ids[2])
+					_tri(tris, sdf, verts, ids[0], ids[2], ids[3])
+	var f: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		printerr("%s: open failed %s" % [path, error_string(FileAccess.get_open_error())])
+		return
+	for v in verts:
+		f.store_line("v %f %f %f" % [v.x, v.y, v.z])
+	for t in range(0, tris.size(), 3):
+		f.store_line("f %d %d %d" % [tris[t] + 1, tris[t + 1] + 1, tris[t + 2] + 1])
+	print("%s: %d verts, %d tris" % [path, verts.size(), tris.size() / 3])
 
 
-## Godot은 바깥에서 볼 때 시계 방향이 앞면이라, 바깥 방향(SDF 기울기)과 맞춰 순서를 정한다
-func _tri(st: SurfaceTool, sdf: Callable, verts: PackedVector3Array, a: int, b: int, c: int) -> void:
+## OBJ는 바깥에서 볼 때 반시계 방향이 앞면이라, 바깥 방향(SDF 기울기)과 맞춰 순서를 정한다
+func _tri(tris: PackedInt32Array, sdf: Callable, verts: PackedVector3Array, a: int, b: int, c: int) -> void:
 	var out: Vector3 = _grad(sdf, (verts[a] + verts[b] + verts[c]) / 3.0)
-	if (verts[b] - verts[a]).cross(verts[c] - verts[a]).dot(out) > 0.0:
+	if (verts[b] - verts[a]).cross(verts[c] - verts[a]).dot(out) < 0.0:
 		var t: int = b
 		b = c
 		c = t
-	st.add_index(a)
-	st.add_index(b)
-	st.add_index(c)
+	tris.append_array([a, b, c])

@@ -86,6 +86,7 @@ func _send(dir: MadRatRules.Dir) -> void:
 
 # 판정이 끝난 주민이 걸어나가 사라진다
 func _leave(v: Villager, dest: Vector3) -> void:
+	v.rotation.y = atan2(dest.x - v.position.x, dest.z - v.position.z) # 주민 앞은 +z
 	var t: Tween = create_tween()
 	t.tween_property(v, "position", dest, 0.6)
 	t.tween_callback(v.queue_free)
