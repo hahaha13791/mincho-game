@@ -4,6 +4,7 @@ extends Control
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const LIST: MinigameList = preload("res://main/minigame_list.tres")
+const DESK: PackedScene = preload("res://main/hub/desk.tscn")
 const PINS: Array[String] = ["danger", "accent", "ballot_box", "mincho"] # 팔레트 이름. 메모마다 돌려 쓴다
 # 테스트용 채우기 프리셋(이름 -> 등급 목록). 목록은 순서대로 미니게임에 배정되고 모자라면 마지막 값을 쓴다
 const FILL_PRESETS: Dictionary = {
@@ -27,7 +28,7 @@ func _ready() -> void:
 	wall.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(wall)
 	_build_board()
-	_build_desk_placeholder()
+	_build_desk()
 	_build_tools()
 
 
@@ -177,17 +178,30 @@ func _panel(rect: Rect2, color: Color, shadow: int) -> Panel:
 	return p
 
 
-# --- 책상 자리 ---
+# --- 책상(3D) ---
 
-# shortcut: 2단계(3D 책상·주인공) 전까지 나무판과 리더보드 버튼만 둔다
-func _build_desk_placeholder() -> void:
-	var top: float = HubLayout.BOARD.end.y + 20.0
-	add_child(_panel(Rect2(0, top, 1920, 1080 - top), PALETTE.wood.lightened(0.15), 8))
+# 책상·소품·주인공은 투명 배경 3D 층으로 보드 위에 겹친다. 마우스는 통과시킨다
+func _build_desk() -> void:
+	var holder: SubViewportContainer = SubViewportContainer.new()
+	holder.stretch = true
+	holder.set_anchors_preset(Control.PRESET_FULL_RECT)
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(holder)
+	var vp: SubViewport = SubViewport.new()
+	vp.transparent_bg = true
+	vp.own_world_3d = true
+	vp.msaa_3d = Viewport.MSAA_4X
+	holder.add_child(vp)
+	var desk: HubDesk = DESK.instantiate()
+	vp.add_child(desk)
+	# 리더보드: 책상 위 서류철 자리에 손글씨 버튼을 얹는다
 	var board: Button = Button.new()
+	board.theme_type_variation = &"HandButton"
 	board.text = "리더보드"
-	board.position = Vector2(60, top + 60)
-	board.pressed.connect(Flow.go_leaderboard)
 	add_child(board)
+	board.reset_size()
+	board.position = desk.folder_screen_pos() - board.size / 2.0 + Vector2(0, -18)
+	board.pressed.connect(Flow.go_leaderboard)
 
 
 # shortcut: 테스트용 버튼들. 전시 전에 숨긴다
