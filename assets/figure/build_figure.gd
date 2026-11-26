@@ -49,7 +49,7 @@ func _fedora(world: Vector3) -> float:
 ## 비밀요원 코트: 긴소매, V자 앞섶, 목을 감싸며 위로 선 깃, 무릎까지 오는 자락
 func _coat(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.03
+	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.042
 	var skirt: float = _capsule(Vector3(p.x, p.y, p.z * 1.25), Vector3(0, 0.78, 0), Vector3(0, 0.36, 0), 0.215) # 곧게 떨어지는 자락
 	d = _smin(d, skirt, 0.05)
 	d = _smax(d, p.y - 1.15, 0.02) # 목둘레
@@ -66,7 +66,7 @@ func _coat(p: Vector3) -> float:
 
 ## 코트 왼쪽 가슴 배지
 func _badge(p: Vector3) -> float:
-	return _ellipsoid(p - Vector3(0.12, 1.0, 0.135), Vector3(0.045, 0.045, 0.014))
+	return _ellipsoid(p - Vector3(0.12, 1.0, 0.147), Vector3(0.045, 0.045, 0.014))
 
 
 func _body(p: Vector3) -> float:
@@ -84,7 +84,10 @@ func _body(p: Vector3) -> float:
 ## 몸통과 윗팔을 감싸고 허리·목·소매에서 자른 반팔 셔츠
 func _shirt(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var d: float = _smin(_torso(p), _upper_arm(q), 0.04) - 0.018
+	# 허리를 따라 조이지 않고 가슴에서 곧게 떨어지게(몸에 칠한 것처럼 보이지 않게) + 두께
+	var f: Vector3 = Vector3(p.x, p.y, p.z * 1.3)
+	var drape: float = _capsule(f, Vector3(0, 0.7, 0), Vector3(0, 1.0, 0), 0.165)
+	var d: float = _smin(_smin(_torso(p), drape, 0.05), _upper_arm(q) - 0.01, 0.04) - 0.03
 	# 자른 면을 둥글게(_smax) 해야 가장자리가 톱니처럼 깨지지 않는다
 	d = _smax(d, 0.66 - p.y, 0.02) # 밑단
 	d = _smax(d, p.y - 1.13, 0.02) # 목둘레
@@ -143,7 +146,7 @@ func _sunglasses(p: Vector3) -> float:
 func _armband(p: Vector3) -> float:
 	var a: Vector3 = Vector3(0.2, 1.05, 0.0)
 	var b: Vector3 = Vector3(0.265, 0.8, 0.0)
-	var band: float = _capsule(p, a, b, 0.06 + 0.04) # 코트 소매(+0.03) 위로도 보이게
+	var band: float = _capsule(p, a, b, 0.06 + 0.055) # 코트 소매(+0.042) 위로도 보이게
 	return _smax(band, absf((p - a.lerp(b, 0.45)).dot((b - a).normalized())) - 0.045, 0.01)
 
 

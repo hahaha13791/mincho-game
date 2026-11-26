@@ -14,6 +14,8 @@ from mathutils import Quaternion, Vector
 SRC = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.normpath(os.path.join(SRC, "..", "figure.glb"))
 FRAMES = 24  # 걷기 한 주기(두 걸음). 24fps 기준 1초
+SMOOTH = 40  # 몸 가중치 다듬기 횟수
+CLOTH_SMOOTH = 40  # 옷 가중치 다듬기 횟수
 
 
 def B(x, y, z):
@@ -73,6 +75,38 @@ def skin(ob, arm, only=None):
         total = sum(w for w, _ in ws)
         for w, n in ws:
             groups[n].add([v.index], w / total, "REPLACE")
+    if not only:
+        # 거리 가중치는 관절에서 경계가 날카로워 어깨가 꺾여 접힌다
+        smooth_weights(ob, SMOOTH)
+    mod = ob.modifiers.new("armature", "ARMATURE")
+    mod.object = arm
+    ob.parent = arm
+
+
+def smooth_weights(ob, repeat):
+    """가중치를 표면을 따라 번지게 다듬는다(공간으로 번지면 머리가 팔을 따라감)"""
+    bpy.context.view_layer.objects.active = ob
+    ob.select_set(True)
+    bpy.ops.object.mode_set(mode="WEIGHT_PAINT")
+    bpy.ops.object.vertex_group_smooth(group_select_mode="ALL", factor=0.5, repeat=repeat)
+    bpy.ops.object.vertex_group_normalize_all(lock_active=False)
+    bpy.ops.object.mode_set(mode="OBJECT")
+
+
+def dress(ob, body, arm):
+    """옷은 몸의 가장 가까운 면에서 가중치를 옮겨 받는다. 몸과 같이 굽어야 자세를 크게 잡아도 몸이 뚫고 나오지 않는다"""
+    for name in BONES:
+        ob.vertex_groups.new(name=name)
+    bpy.context.view_layer.objects.active = ob
+    mod = ob.modifiers.new("weights", "DATA_TRANSFER")
+    mod.object = body
+    mod.use_vert_data = True
+    mod.data_types_verts = {"VGROUP_WEIGHTS"}
+    mod.vert_mapping = "POLYINTERP_NEAREST"
+    mod.layers_vgroup_select_src = "ALL"
+    mod.layers_vgroup_select_dst = "NAME"
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    smooth_weights(ob, CLOTH_SMOOTH)  # 몸통 옆 옷이 바로 옆 팔 면의 가중치를 받아 구겨지는 것을 펴 준다
     mod = ob.modifiers.new("armature", "ARMATURE")
     mod.object = arm
     ob.parent = arm
@@ -229,17 +263,18 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.scene.render.fps = 24
     arm = build_armature()
-    skin(load("Body", 0.25), arm)
-    skin(load("Shirt", 0.7), arm)
+    body = load("Body", 0.25)
+    skin(body, arm)
+    dress(load("Shirt", 0.7), body, arm)
     skin(load("Hat", 0.35), arm, only="head")
-    skin(load("Jacket", 0.5), arm)
-    skin(load("Pants", 0.5), arm)
+    dress(load("Jacket", 0.5), body, arm)
+    dress(load("Pants", 0.5), body, arm)
     skin(load("Tie", 1.0), arm, only="spine")
     skin(load("Sunglasses", 1.0), arm, only="head")
     skin(load("Armband", 0.5), arm, only="upper_arm.L")
     skin(load("Headband", 0.6), arm, only="head")
     skin(load("Fedora", 0.5), arm, only="head")
-    skin(load("Coat", 0.5), arm)
+    dress(load("Coat", 0.5), body, arm)
     skin(load("Badge", 1.0), arm, only="spine")
     make_action(arm, "walk", walk_pose)
     make_action(arm, "idle", idle_pose)
