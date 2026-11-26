@@ -12,6 +12,7 @@ extends Resource
 @export var fast_from: int = 9 ## 이 마디부터 16분 패턴도 나옴
 @export var watch_from: int = 9 ## 이 마디부터 감시자가 나옴
 @export var watch_every: int = 2 ## 감시자 간격(마디). 따라 하기 마디마다 한 명
+@export var warn_beats: float = 2.0 ## 감시자 표보다 이만큼 먼저 소리와 함께 감시자가 고개를 내민다(박)
 @export var window: float = 0.17 ## 박자 판정 허용 오차(초, ±). 표 간격이 좁으면 간격의 절반으로 줄어든다
 @export var perfect_mistakes: int = 1 ## 실수가 이 이하면 완전범죄
 @export var success_mistakes: int = 5 ## 실수가 이 이하면 미션성공, 넘으면 적발

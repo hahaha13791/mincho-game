@@ -12,15 +12,22 @@ const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const CONVEYOR: PackedScene = preload("res://minigames/piano_ballot/props/conveyor.tscn")
 const STAMP: PackedScene = preload("res://minigames/piano_ballot/props/stamp.tscn")
 const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
-const SPACING: float = 3.0 # 한 박 동안 표가 가는 거리. 16분(0.25박) 간격 0.75가 표 폭보다 넓게
+const SPACING: float = 5.0 # 한 박 동안 표가 가는 거리. 고리(레일 길이 × 2)가 1마디가 되게 레일 길이와 맞춘다
 const BALLOT_SIZE: Vector3 = Vector3(0.66, 0.06, 1.0) # 흐르는 방향(x)으로 좁은 쪽지
 const BELT_END: float = Conveyor.LENGTH / 2.0 # 레일 끝. 여기서 미리보기 레일 → 앞 레일로 넘어온다
 const CALL_LAG: float = 4.0 # 뒤 레일 가운데 → 찍는 자리 = 1마디. 고리 길이(2 × BELT_END)가 SPACING × 이 값과 같아야 한다
-const PREVIEW_Z: float = -2.6 # 미리보기 레일(뒤쪽, 반대 방향)
-const WATCH_SHOW: float = 0.4 # 감시자 표 앞뒤로 감시자가 서 있는 시간(박)
+const PREVIEW_Z: float = -4.5 # 미리보기 레일(뒤쪽, 반대 방향)
+const WATCH_SHOW: float = 0.5 # 감시자 표 앞뒤로 감시자가 다 올라와 있는 시간(박)
+# 감시자 상반신: 카메라에 붙여 화면 오른쪽 아래에서 비스듬히 올라온다(카메라 기준 좌표, 직교 카메라 size 10 = 세로 ±5)
+const WATCHER_SCALE: float = 6.5 # 머리~가슴이 화면 세로의 2/3쯤
+# 크기 6.5에서 발 → 머리 끝 ≈ 12.2(캡처로 잼). 화면 아래 끝 = -5
+const WATCHER_UP: Vector3 = Vector3(7.5, -10.5, -3.0) # 다 올라온 자리(발 기준). 머리 끝이 화면 위에서 1/3쯤 = 세로 2/3
+const WATCHER_DOWN_Y: float = -18.0 # 숨은 자리. 머리 끝까지 화면 아래
+const WATCHER_PEEK: float = 0.27 # 예고 동안 올라오는 비율(머리 끝만)
+const WATCHER_LEAN: float = 0.15 # 화면 안쪽으로 기우는 각도(라디안). 발 기준으로 돌아 머리가 크게 움직이니 작게
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
-const TUTORIAL_TEXT: String = "날 따라해봐요! 먼저 뒤쪽 레일의 표가 가운데를 지나며 리듬을 들려줍니다. 듣기만 하세요.\n다음 마디에 같은 표가 같은 리듬으로 앞 레일의 찍는 틀에 옵니다. 그때 클릭!\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 한 박자 뒤 그 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
+const TUTORIAL_TEXT: String = "날 따라해봐요! 먼저 뒤쪽 레일의 표가 가운데를 지나며 리듬을 들려줍니다. 듣기만 하세요.\n다음 마디에 같은 표가 같은 리듬으로 앞 레일의 찍는 틀에 옵니다. 그때 클릭!\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n낮은 소리와 함께 감시자가 고개를 내밀면, 감시자가 다 올라온 순간 오는 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
 
 @export var id: StringName = &"piano_ballot"
 
@@ -52,7 +59,7 @@ var _stamp_tween: Tween
 
 func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
-	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, -0.8)) # 약 30도. 컨베이어 옆면(롤러)과 뒤 미리보기 레일이 보이게
+	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, -2.0)) # 약 30도. 컨베이어 옆면(롤러)과 뒤 미리보기 레일이 보이게
 	_beat_dur = 60.0 / CONFIG.bpm
 	_first = CONFIG.count_in * _beat_dur
 	assert(is_equal_approx(2.0 * BELT_END, SPACING * CALL_LAG), "고리 길이가 1마디와 안 맞음: Conveyor.LENGTH 또는 SPACING 확인")
@@ -102,19 +109,20 @@ func _process(delta: float) -> void:
 	if _next_call < _beats.size() and now >= _beats[_next_call]["time"] - CALL_LAG:
 		Beep.play(_call_sfx, 523.0, 0.12) # 보여 주기: 뒤 레일 가운데를 지나는 표마다
 		_next_call += 1
-	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - 1.0:
-		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + 0.5) * _beat_dur
-		Beep.play(_sfx, 330.0)
+	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - CONFIG.warn_beats:
+		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + WATCH_SHOW) * _beat_dur
+		Beep.play(_sfx, 330.0, 0.2)
 		_next_warn += 1
-	var watcher_here: bool = false
+	var rise: float = 0.0 # 감시자가 올라온 정도: 0 숨음, WATCHER_PEEK 예고, 1 다 올라옴
 	for i in _ballots.size():
 		var u: float = now - _beats[i]["time"] # 찍는 지점까지 남은(음수)·지난(양수) 박
 		_place_ballot(_ballots[i], u * SPACING)
-		if _beats[i]["watcher"] and absf(u) < WATCH_SHOW:
-			watcher_here = true
+		if _beats[i]["watcher"]:
+			rise = maxf(rise, _watcher_rise(u))
 	for c in _conveyors:
 		c.scroll(_t / _beat_dur * SPACING) # 표와 같은 속도
-	_watcher.set_present(watcher_here)
+	_watcher.position = WATCHER_UP
+	_watcher.position.y = lerpf(WATCHER_DOWN_Y, WATCHER_UP.y, rise)
 	_warn.visible = _t < _warn_until
 	# 판정 창이 지난 표는 안 찍은 것으로 확정한다
 	while _next_resolve < _beats.size() and _t > _first + _beats[_next_resolve]["time"] * _beat_dur + _windows[_next_resolve]:
@@ -124,6 +132,20 @@ func _process(delta: float) -> void:
 		_next_resolve += 1
 	if _next_resolve >= _beats.size():
 		_finish(false, "")
+
+
+# u = 감시자 표가 찍는 지점까지 남은(음수)·지난(양수) 박. 예고 동안 머리만 내밀다가, 그 표가 올 때 다 올라왔다 내려간다
+func _watcher_rise(u: float) -> float:
+	var up: float = 0.15 # 오르내리는 데 걸리는 박
+	if u < -CONFIG.warn_beats or u > WATCH_SHOW + up:
+		return 0.0
+	if u < -WATCH_SHOW - up:
+		return WATCHER_PEEK * clampf((u + CONFIG.warn_beats) / up, 0.0, 1.0)
+	if u < -WATCH_SHOW:
+		return lerpf(WATCHER_PEEK, 1.0, (u + WATCH_SHOW + up) / up)
+	if u <= WATCH_SHOW:
+		return 1.0
+	return 1.0 - (u - WATCH_SHOW) / up
 
 
 # 고리 위치. d = 앞 레일에서 찍는 지점 기준 x. 앞 레일 왼쪽 끝보다 이전이면 미리보기 레일 위(반대 방향)
@@ -251,6 +273,9 @@ func _build_visuals() -> void:
 	_stamper.position = Vector3(0.0, STAMPER_REST_Y, 0.0)
 	add_child(_stamper)
 
-	_watcher = WATCHER.instantiate()
-	_watcher.position = Vector3(-3.0, 0.0, PREVIEW_Z - 2.0) # 미리보기 레일 너머에서 찍는 자리를 본다
-	add_child(_watcher)
+	_watcher = WATCHER.instantiate() # 카메라 자식: 인형 앞(+z)이 카메라를 본다
+	_watcher.scale = Vector3.ONE * WATCHER_SCALE
+	_watcher.rotation.z = WATCHER_LEAN
+	_watcher.position = Vector3(WATCHER_UP.x, WATCHER_DOWN_Y, WATCHER_UP.z)
+	_camera.add_child(_watcher)
+	_watcher.set_present(true) # 서브씬은 숨은 채 시작한다. 등장은 화면 아래로 숨겼다가 올리는 것으로 한다
