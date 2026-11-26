@@ -1,7 +1,9 @@
 class_name PianoRules
 extends RefCounted
 
-const WATCH_MIN_GAP: float = 0.5 # 감시자 표는 앞뒤 표와 이 박 이상 떨어진 표 중에서 고른다(옆 표와 헷갈리지 않게)
+## 감시자 표는 앞뒤 표와 이 박 이상 떨어진 표 중에서 고른다. 감시자가 들어와 있는 동안 다른 표가 지나가지 않게 해,
+## 감시자 앞에서 못 찍은 표가 실수로 잡히는 일이 없게 한다(piano_ballot.gd의 감시자 등장 시간보다 길어야 함)
+const WATCH_MIN_GAP: float = 1.0
 
 
 ## 표 목록(시간순). 각 원소 = { "time": 첫 마디 0박 기준 몇 박째(소수 가능), "anti": 반민초 표인가, "watcher": 감시자가 오는 표인가 }

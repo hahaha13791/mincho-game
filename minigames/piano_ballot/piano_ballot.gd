@@ -18,6 +18,7 @@ const BELT_END: float = Conveyor.LENGTH / 2.0 # 레일 끝(화면 밖). 이 밖�
 const CALL_LAG: float = 4.0 # 뒤 레일 가운데를 지난 뒤 찍는 자리에 오기까지 = 1마디
 const PREVIEW_Z: float = -4.5 # 미리보기 레일(뒤쪽, 반대 방향)
 const WATCH_SHOW: float = 0.5 # 감시자 표 앞뒤로 감시자가 다 들어와 있는 시간(박)
+const WATCH_MOVE: float = 0.15 # 감시자가 들어오고 나가는 데 걸리는 박
 # 감시자 상반신: 카메라에 붙인 축(허리)을 화면 가장자리에 두고, 몸이 축의 +y 쪽으로 화면 안에 들어온다. 허리 아래는 늘 화면 밖
 const WATCHER_SCALE: float = 6.7 # 허리 → 머리 끝(크기 1에서 약 1.0)이 화면 세로(10)의 2/3쯤
 const WATCHER_DEPTH: float = -3.0 # 카메라 앞 거리
@@ -71,6 +72,7 @@ func _ready() -> void:
 	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, -2.0)) # 약 30도. 컨베이어 옆면(롤러)과 뒤 미리보기 레일이 보이게
 	_beat_dur = 60.0 / CONFIG.bpm
 	_first = CONFIG.count_in * _beat_dur
+	assert(WATCH_SHOW + WATCH_MOVE < PianoRules.WATCH_MIN_GAP, "감시자가 들어와 있는 동안 옆 표가 지나갈 수 있음: WATCH_MIN_GAP을 늘릴 것")
 	_sfx = AudioStreamPlayer.new()
 	add_child(_sfx)
 	_call_sfx = AudioStreamPlayer.new()
@@ -148,7 +150,7 @@ func _process(delta: float) -> void:
 
 # u = 감시자 표가 찍는 지점까지 남은(음수)·지난(양수) 박. 예고 동안 머리만 내밀다가, 그 표가 올 때 다 올라왔다 내려간다
 func _watcher_rise(u: float) -> float:
-	var up: float = 0.15 # 오르내리는 데 걸리는 박
+	var up: float = WATCH_MOVE
 	if u < -CONFIG.warn_beats or u > WATCH_SHOW + up:
 		return 0.0
 	if u < -WATCH_SHOW - up:
