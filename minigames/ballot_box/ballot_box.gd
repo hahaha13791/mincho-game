@@ -341,6 +341,9 @@ func _build_visuals() -> void:
 	_lid = _box(Vector3(BOX_W + 2.0 * WALL_T, LID_T, BOX_D), box_color.lightened(0.25))
 	_lid.position = LID_OPEN_POS
 	add_child(_lid)
+	var slot: MeshInstance3D = _box(Vector3(1.8, 0.03, 0.22), PALETTE.burnt) # 투표용지 넣는 구멍
+	slot.position.y = LID_T / 2.0
+	_lid.add_child(slot)
 
 	_observer = WATCHER.instantiate()
 	_observer.position = Vector3(OBSERVER_FROM_X, -1.0, 0.0) # 발 높이 = 예전 상자 밑면
