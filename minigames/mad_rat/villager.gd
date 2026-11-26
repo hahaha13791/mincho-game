@@ -32,18 +32,3 @@ func setup(mincho: bool, twist: MadRatRules.Twist) -> void:
 			outfit["Shirt"] = other
 			outfit["Sunglasses"] = PALETTE.sunglasses
 	FigureLook.dress(_figure, outfit)
-
-
-## 걸음을 멈추고 머리 위에 짧은 반응(예: "?!")을 띄운다
-func exclaim(text: String) -> void:
-	FigureLook.play(_figure, "idle")
-	var label: Label3D = Label3D.new()
-	label.text = text
-	label.font_size = 128
-	label.pixel_size = 0.01
-	label.outline_size = 24
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.position.y = 3.3
-	add_child(label)
-	label.scale = Vector3.ZERO
-	create_tween().tween_property(label, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)

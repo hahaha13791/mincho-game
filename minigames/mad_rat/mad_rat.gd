@@ -36,6 +36,7 @@ var _queue: Array[Villager] = [] # 갈림길에 가까운 주민이 앞(0번)
 var _sign_dir: MadRatRules.Dir = MadRatRules.Dir.LEFT
 var _sign_arrow: Node3D
 var _sign_tween: Tween
+var _shop: Node3D
 
 @onready var _camera: Camera3D = $Camera3D
 @onready var _villagers: Node3D = $Villagers
@@ -132,12 +133,30 @@ func _send(v: Villager) -> void:
 	v.rotation.y = atan2(dest.x - v.position.x, dest.z - v.position.z) # 주민 앞은 +z
 	var t: Tween = create_tween()
 	t.tween_property(v, "position", dest, 0.6)
-	if dir == MadRatRules.Dir.RIGHT: # 가게 앞: 반민초는 기겁, 민초는 홀딱 반해 투표를 잊는다. 그리고 가게에 빨려 들어간다
-		t.tween_callback(v.exclaim.bind("♥" if v.is_mincho else "?!"))
-		t.tween_interval(SHOP_WAIT)
+	if dir == MadRatRules.Dir.RIGHT: # 가게에 빨려 들어간 뒤 안에서 반응: 반민초는 기겁, 민초는 홀딱 반해 투표를 잊는다
 		t.tween_property(v, "position", dest + Vector3(2.0, 0.0, 0.0), 0.25).set_ease(Tween.EASE_IN)
 		t.parallel().tween_property(v, "scale", Vector3.ZERO, 0.25).set_ease(Tween.EASE_IN)
+		t.tween_callback(_shop_react.bind(v.is_mincho))
 	t.tween_callback(v.queue_free)
+
+
+# 가게가 들썩이고 문 위에 반응이 뜬다
+func _shop_react(mincho: bool) -> void:
+	var label: Label3D = Label3D.new()
+	label.text = "♥" if mincho else "?!"
+	label.font_size = 128
+	label.pixel_size = 0.01
+	label.outline_size = 24
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.position = _shop.position + Vector3(-1.0, 2.8, 1.2)
+	_villagers.add_child(label) # Villagers 밑에 두어야 반응이 끝난 뒤에 웨이브가 넘어간다
+	label.scale = Vector3.ZERO
+	var t: Tween = create_tween()
+	t.tween_property(label, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(_shop, "scale", Vector3(1.12, 0.88, 1.12), 0.08)
+	t.chain().tween_property(_shop, "scale", Vector3.ONE, 0.2).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(SHOP_WAIT)
+	t.tween_callback(label.queue_free)
 
 
 func _finish() -> void:
@@ -212,15 +231,18 @@ func _build_visuals() -> void:
 
 	# 민트초코 아이스크림가게: 초코 벽, 민트 지붕, 지붕 위 큰 콘
 	var shop_x: float = EXIT_X + 2.0 # 지붕이 가게 앞에 멈춘 주민을 가리지 않게 길 끝에서 띄운다
+	_shop = Node3D.new() # 가게 전체. 손님이 들어가면 들썩인다
+	_shop.position = Vector3(shop_x, 0.0, JUNCTION_Z)
+	add_child(_shop)
 	var walls: MeshInstance3D = _box(Vector3(3.0, 1.8, 3.0), PALETTE.chocolate)
-	walls.position = Vector3(shop_x, 0.9, JUNCTION_Z)
-	add_child(walls)
+	walls.position = Vector3(0.0, 0.9, 0.0)
+	_shop.add_child(walls)
 	var roof: MeshInstance3D = _box(Vector3(3.4, 0.4, 3.4), PALETTE.mincho)
-	roof.position = Vector3(shop_x, 2.0, JUNCTION_Z)
-	add_child(roof)
+	roof.position = Vector3(0.0, 2.0, 0.0)
+	_shop.add_child(roof)
 	var door: MeshInstance3D = _box(Vector3(0.05, 1.2, 1.0), PALETTE.mincho.darkened(0.3)) # 길 쪽(왼쪽) 벽의 문
-	door.position = Vector3(shop_x - 1.52, 0.6, JUNCTION_Z)
-	add_child(door)
+	door.position = Vector3(-1.52, 0.6, 0.0)
+	_shop.add_child(door)
 	var cone: MeshInstance3D = MeshInstance3D.new()
 	var cone_mesh: CylinderMesh = CylinderMesh.new()
 	cone_mesh.top_radius = 0.45
@@ -230,8 +252,8 @@ func _build_visuals() -> void:
 	cone_mat.albedo_color = PALETTE.cardboard
 	cone_mesh.material = cone_mat
 	cone.mesh = cone_mesh
-	cone.position = Vector3(shop_x, 2.7, JUNCTION_Z)
-	add_child(cone)
+	cone.position = Vector3(0.0, 2.7, 0.0)
+	_shop.add_child(cone)
 	var scoop: MeshInstance3D = MeshInstance3D.new()
 	var scoop_mesh: SphereMesh = SphereMesh.new()
 	scoop_mesh.radius = 0.55
@@ -240,12 +262,12 @@ func _build_visuals() -> void:
 	scoop_mat.albedo_color = PALETTE.mincho
 	scoop_mesh.material = scoop_mat
 	scoop.mesh = scoop_mesh
-	scoop.position = Vector3(shop_x, 3.35, JUNCTION_Z)
-	add_child(scoop)
+	scoop.position = Vector3(0.0, 3.35, 0.0)
+	_shop.add_child(scoop)
 	for chip in [Vector3(0.3, 0.25, 0.4), Vector3(-0.35, 0.1, 0.38), Vector3(0.05, 0.42, 0.35), Vector3(0.45, -0.05, 0.25)]:
 		var c: MeshInstance3D = _box(Vector3(0.14, 0.14, 0.14), PALETTE.chocolate)
 		c.position = scoop.position + chip
-		add_child(c)
+		_shop.add_child(c)
 	var shop_label: Label3D = Label3D.new()
 	shop_label.text = "민트초코\n아이스크림"
 	shop_label.font_size = 72
