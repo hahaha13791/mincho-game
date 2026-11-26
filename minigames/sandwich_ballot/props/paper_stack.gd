@@ -1,7 +1,7 @@
 class_name PaperStack
 extends Node3D
 ## 샌드위치표 다발 겉모습과 쌓이는 연출. 로직은 reset / add_bundle / add_sheets / collapse만 쓴다.
-## 반민초 표 = 흰 종이 한 장씩, 민초 묶음 = 민트 띠지를 두른 흰 종이 덩어리(맨 위 묶음엔 민트 '卜' 도장).
+## 반민초 표 = 빨간 '卜' 도장이 찍힌 흰 종이 한 장씩, 민초 묶음 = 민트 띠지를 두른 흰 종이 덩어리(맨 위 묶음엔 민트 '卜' 도장).
 
 signal sheet_landed ## 종이 한 장이 내려앉을 때마다
 
@@ -11,6 +11,7 @@ const FALL_TIME: float = 0.12 # 종이 한 장이 떨어지는 시간
 const DROP_FROM: float = 0.7 # 이만큼 위에서 떨어진다
 const STICK_OUT_CHANCE: float = 0.12 # 옆으로 삐져나오는 종이 비율
 const SLIDE_OFF_X: float = 5.6 # 버스트 때 종이가 미끄러져 나가는 거리. 탁자 반폭(5)보다 커야 한다
+const TIDY_TIME: float = 0.25 # 묶기 전에 종이를 가지런히 모으는 시간
 
 var bundle_xz: Vector2 = Vector2(3.2, 2.2)
 var sheet_h: float = 0.06
@@ -30,17 +31,16 @@ func reset(floor_y: float) -> void:
 	_floor_y = floor_y
 
 
-## 다발 완성: 위·아래 묶음의 띠지를 앞뒷면 세로 띠로 이어 묶는다(아래에서 위로 자라남)
+## 다발 완성: 삐져나온 종이를 가운데로 반듯하게 모은 뒤, 위·아래 묶음의 띠지를 앞뒷면 세로 띠로 이어 묶는다(아래에서 위로 자라남)
 func tie() -> void:
 	var h: float = _top_y - _floor_y
-	# 띠지가 조이면서 앞뒤(z)로 삐져나온 종이를 안으로 밀어 넣는다(띠지를 뚫고 보이지 않게)
-	var loose: Array[Node3D] = _sheets.filter(func(s: Node3D) -> bool: return absf(s.position.z) > 0.04 or absf(s.rotation.y) > 0.03)
-	if not loose.is_empty(): # 빈 Tween은 에러라 밀 종이가 있을 때만
-		var squeeze: Tween = create_tween().set_parallel(true)
-		for s in loose:
-			squeeze.tween_property(s, "position:z", clampf(s.position.z, -0.04, 0.04), 0.12)
-			squeeze.tween_property(s, "rotation:y", clampf(s.rotation.y, -0.03, 0.03), 0.12)
-		await squeeze.finished
+	# 종이를 탁탁 추려 가지런히. 종이마다 크기·밝기가 조금씩 달라 정리해도 옆면의 장 구분선은 남는다
+	if not _sheets.is_empty(): # 빈 Tween은 에러라 종이가 있을 때만
+		var tidy: Tween = create_tween().set_parallel(true).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		for s in _sheets:
+			tidy.tween_property(s, "position", Vector3(0.0, s.position.y, 0.0), TIDY_TIME)
+			tidy.tween_property(s, "rotation", Vector3.ZERO, TIDY_TIME)
+		await tidy.finished
 	var t: Tween = create_tween().set_parallel(true)
 	for side in [1.0, -1.0]:
 		var pivot: Node3D = Node3D.new() # 밑면 기준으로 자라게
@@ -118,6 +118,11 @@ func _drop_sheet() -> Tween:
 	_sheets.append(sheet)
 	var shade: Color = PALETTE.paper.darkened(randf_range(0.0, 0.07)) # 장마다 미세하게 달라 옆면에 결이 생긴다
 	_add_box(sheet, Vector3(bundle_xz.x * randf_range(0.97, 1.0), sheet_h * 0.85, bundle_xz.y * randf_range(0.97, 1.0)), Vector3.ZERO, shade)
+	var mark: Node3D = STAMP_MARK.instantiate() # 반민초 기표: 기본 인주색(빨강). 민초 묶음 도장(왼쪽)과 반대편에 손으로 찍은 듯
+	mark.scale = Vector3.ONE * 1.6
+	mark.position = Vector3(randf_range(0.7, 1.0), sheet_h * 0.425 + 0.003, randf_range(-0.2, 0.2))
+	mark.rotation.y = randf_range(-0.35, 0.35)
+	sheet.add_child(mark)
 	var rest_pos: Vector3 = Vector3(randf_range(-0.04, 0.04), y, randf_range(-0.04, 0.04))
 	var rest_rot: Vector3 = Vector3(0, randf_range(-0.03, 0.03), 0)
 	if randf() < STICK_OUT_CHANCE: # 삐져나온 종이: 한쪽으로 크게 밀리고 끝이 살짝 들림
