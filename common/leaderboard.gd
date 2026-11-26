@@ -4,7 +4,7 @@ extends RefCounted
 ## 항목 = { id, name, score, percent, title, ranks(플레이한 순서대로 Grade.Rank), time }
 
 const PATH: String = "user://leaderboard.json"
-const GLYPHS: Array[String] = ["완", "미", "적"] # 인덱스 = Grade.Rank
+const GLYPHS: Array[String] = ["★", "○", "✕"] # 인덱스 = Grade.Rank (완전범죄, 미션성공, 적발)
 
 ## 방금 등록한 항목 id (리더보드 화면에서 강조). 화면을 떠나면 -1로 되돌린다
 static var highlight_id: int = -1
@@ -34,12 +34,15 @@ static func save(entries: Array[Dictionary], path: String = PATH) -> bool:
 	return true
 
 
-## 새 항목을 entries에 붙이고 돌려준다. 이름은 id로 자동 부여(입력이 마우스뿐이라 이름 입력 없음)
-static func add(entries: Array[Dictionary], score: int, percent: float, title: String, ranks: Array, now: int) -> Dictionary:
+## 새 항목을 entries에 붙이고 돌려준다. 이름(타이틀 서명란)이 비면 id로 '민초단원 N호'를 붙인다
+static func add(entries: Array[Dictionary], score: int, percent: float, title: String, ranks: Array, now: int, player_name: String = "") -> Dictionary:
 	var next_id: int = 1
 	for e in entries:
 		next_id = maxi(next_id, int(e["id"]) + 1)
-	var entry: Dictionary = {"id": next_id, "name": "민초단원 %d호" % next_id, "score": score, "percent": percent, "title": title, "ranks": ranks, "time": now}
+	var shown: String = player_name.strip_edges()
+	if shown.is_empty():
+		shown = "민초단원 %d호" % next_id
+	var entry: Dictionary = {"id": next_id, "name": shown, "score": score, "percent": percent, "title": title, "ranks": ranks, "time": now}
 	entries.append(entry)
 	return entry
 
@@ -63,7 +66,7 @@ static func rank_of(sorted: Array[Dictionary], id: int) -> int:
 	return 0
 
 
-## 미니게임별 등급 약자 (예: 완완미적)
+## 미니게임별 등급 기호 (예: ★★○✕)
 static func glyphs(ranks: Array) -> String:
 	var s: String = ""
 	for r in ranks:

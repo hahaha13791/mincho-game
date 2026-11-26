@@ -78,7 +78,7 @@ func _play(from_percent: float, to_percent: float) -> void:
 # 리더보드에 등록하고 새 방문자를 위해 득표와 등급을 초기화한다
 func _register(ranks: Array, percent: float) -> void:
 	var entries: Array[Dictionary] = Leaderboard.load_all()
-	var entry: Dictionary = Leaderboard.add(entries, GameState.total_score(), percent, FinalRules.title(ranks, percent), ranks, int(Time.get_unix_time_from_system()))
+	var entry: Dictionary = Leaderboard.add(entries, GameState.total_score(), percent, FinalRules.title(ranks, percent), ranks, int(Time.get_unix_time_from_system()), GameState.player_name)
 	if not Leaderboard.save(entries):
 		push_error("리더보드를 저장하지 못했다: " + Leaderboard.PATH)
 	Leaderboard.highlight_id = entry["id"]

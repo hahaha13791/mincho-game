@@ -25,9 +25,11 @@ const CREW: Array[Dictionary] = [
 ]
 const CREW_TURN: float = 0.6
 const STAMP_SIZE: float = 150.0
+const NAME_MAX: int = 10 # 리더보드 한 줄에 들어가게
 
 var _stamp_slot: Control
 var _start: Button
+var _sign: LineEdit
 var _ice: IceCream
 var _sfx: AudioStreamPlayer
 
@@ -43,7 +45,7 @@ func _ready() -> void:
 	_build_form()
 	_build_3d()
 	_build_light()
-	_start.grab_focus() # Space·Enter로도 입단
+	_sign.grab_focus() # 바로 이름을 쓰고 Enter로 입단
 
 
 func _process(delta: float) -> void:
@@ -91,7 +93,7 @@ func _build_form() -> void:
 	left.alignment = BoxContainer.ALIGNMENT_CENTER
 	left.add_theme_constant_override("separation", 18)
 	bottom.add_child(left)
-	left.add_child(_hand("서명: ____________", 40, INK, HORIZONTAL_ALIGNMENT_LEFT))
+	left.add_child(_signature())
 	var buttons: HBoxContainer = HBoxContainer.new()
 	buttons.add_theme_constant_override("separation", 24)
 	left.add_child(buttons)
@@ -114,6 +116,33 @@ func _build_form() -> void:
 	_stamp_slot = _circle(PALETTE.furniture, 3, "도장", 34)
 	_stamp_slot.custom_minimum_size = Vector2(STAMP_SIZE, STAMP_SIZE)
 	bottom.add_child(_stamp_slot)
+
+
+# 서명란: 밑줄 위에 손글씨로 이름을 쓴다(리더보드 이름). 비워 두면 리더보드가 '민초단원 N호'를 붙인다. Enter = 입단
+func _signature() -> HBoxContainer:
+	var row: HBoxContainer = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.add_child(_hand("서명:", 40, INK, HORIZONTAL_ALIGNMENT_LEFT))
+	_sign = LineEdit.new()
+	_sign.custom_minimum_size = Vector2(380, 0)
+	_sign.max_length = NAME_MAX
+	_sign.placeholder_text = "이름 (안 써도 됨)"
+	_sign.add_theme_font_override("font", get_theme_font("font", &"HandLabel"))
+	_sign.add_theme_font_size_override("font_size", 44)
+	_sign.add_theme_color_override("font_color", INK)
+	_sign.add_theme_color_override("font_uneditable_color", INK) # 입단 뒤 잠가도 서명은 진하게
+	_sign.add_theme_color_override("caret_color", INK)
+	_sign.add_theme_color_override("font_placeholder_color", Color(INK, 0.35))
+	var line: StyleBoxFlat = StyleBoxFlat.new()
+	line.bg_color = Color(0, 0, 0, 0)
+	line.border_color = INK
+	line.border_width_bottom = 3
+	line.content_margin_left = 6
+	for state: String in ["normal", "focus", "read_only"]:
+		_sign.add_theme_stylebox_override(state, line)
+	_sign.text_submitted.connect(func(_t: String) -> void: _join())
+	row.add_child(_sign)
+	return row
 
 
 # [입단하기] 버튼 모양: 민트 바탕에 잉크 테두리. 마우스를 올리면 밝게, 누르면 어둡게
@@ -188,7 +217,11 @@ func _gap(h: float) -> Control:
 
 # 입단: 도장 자리에 초록 '입단' 도장이 쾅 찍히고 조금 뒤 작전본부실로
 func _join() -> void:
+	if _start.disabled:
+		return # 버튼과 Enter가 겹쳐 두 번 찍히지 않게
 	_start.disabled = true
+	GameState.player_name = _sign.text.strip_edges()
+	_sign.editable = false
 	var seal: Panel = _circle(PALETTE.mincho.darkened(0.25), 8, "입단", 64)
 	seal.pivot_offset = Vector2(STAMP_SIZE, STAMP_SIZE) / 2.0
 	seal.rotation = -0.25

@@ -47,7 +47,7 @@ func _ready() -> void:
 
 func _row(rank: int, e: Dictionary) -> Label:
 	var mine: bool = int(e["id"]) == Leaderboard.highlight_id
-	var text: String = "%s%2d위   %s   %d점   %s   %s" % ["★ " if mine else "   ", rank, e["name"], int(e["score"]), e["title"], Leaderboard.glyphs(e["ranks"])]
+	var text: String = "%s%2d위   %s   %d점   %s   %s" % ["▶ " if mine else "   ", rank, e["name"], int(e["score"]), e["title"], Leaderboard.glyphs(e["ranks"])]
 	return _row_label(text, mine)
 
 

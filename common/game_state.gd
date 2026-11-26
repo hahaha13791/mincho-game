@@ -11,6 +11,7 @@ const MINIGAME_COUNT: int = 6
 var config: VoteConfig = preload("res://common/vote_config.tres")
 var mincho_percent: float
 var grades: Dictionary = {} # StringName -> Grade.Rank
+var player_name: String = "" # 타이틀 원서 서명란에 쓴 이름. 비면 리더보드가 '민초단원 N호'로 붙인다
 
 
 func _ready() -> void:
@@ -19,6 +20,7 @@ func _ready() -> void:
 
 func reset() -> void:
 	grades.clear()
+	player_name = ""
 	mincho_percent = config.start_mincho_percent
 	vote_changed.emit(mincho_percent)
 
