@@ -152,10 +152,10 @@ func _build_visuals() -> void:
 	ground.position = Vector3(0.0, -0.1, -2.0)
 	add_child(ground)
 
-	var road: MeshInstance3D = _box(Vector3(2.0, 0.05, 11.0), PALETTE.paper)
+	var road: MeshInstance3D = _box(Vector3(2.0, 0.05, 11.0), PALETTE.road)
 	road.position = Vector3(0.0, 0.02, -4.5)
 	add_child(road)
-	var cross: MeshInstance3D = _box(Vector3(2.0 * EXIT_X + 1.0, 0.05, 2.0), PALETTE.paper)
+	var cross: MeshInstance3D = _box(Vector3(2.0 * EXIT_X + 1.0, 0.05, 2.0), PALETTE.road)
 	cross.position = Vector3(0.0, 0.02, JUNCTION_Z)
 	add_child(cross)
 

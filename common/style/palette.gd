@@ -7,6 +7,7 @@ extends Resource
 @export var background: Color = Color("f2ebdd")
 @export var paper: Color = Color("faf7f0")
 @export var doll: Color = Color("f4f4f1") # 얼굴 없는 하얀 인형(인물 기본 몸)
+@export var road: Color = Color("9c9488") # 길. 하얀 인형이 묻히지 않게 어둡게
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")
