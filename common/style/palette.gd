@@ -21,6 +21,7 @@ extends Resource
 @export var memo: Color = Color("f7e38f") # 노란 메모지
 @export var yarn: Color = Color("c8403a") # 수사 보드 빨간 실
 @export var chocolate: Color = Color("3b2217") # 주인공 중절모·코트(민트초코). 반민초 갈색보다 훨씬 진하게
+@export var lamp_light: Color = Color("ffeed4") # 작전본부실 따뜻한 백색 조명
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")

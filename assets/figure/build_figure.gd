@@ -33,8 +33,11 @@ func _headband(p: Vector3) -> float:
 	return _smin(band, tail, 0.02)
 
 
-## 중절모: 윗면이 움푹한 몸체 + 양옆이 살짝 올라간 챙. 머리띠가 챙 아래로 보이게 높이 쓴다
-func _fedora(p: Vector3) -> float:
+## 중절모: 윗면이 움푹한 몸체 + 양옆이 살짝 올라간 챙. 앞으로 살짝 눌러쓴다(비밀요원)
+func _fedora(world: Vector3) -> float:
+	var a: float = 0.14 # 앞이 내려가게 기울임
+	var v: Vector3 = world - Vector3(0, 1.6, 0)
+	var p: Vector3 = Vector3(0, 1.6, 0) + Vector3(v.x, v.y * cos(a) + v.z * sin(a), -v.y * sin(a) + v.z * cos(a))
 	var r: float = Vector2(p.x, p.z * 0.92).length()
 	var crown: float = Vector2(maxf(r - 0.22, 0.0), maxf(absf(p.y - 1.72) - 0.11, 0.0)).length() - 0.03
 	crown = _smax(crown, -_ellipsoid(p - Vector3(0, 1.88, 0), Vector3(0.05, 0.06, 0.18)), 0.02) # 윗면 주름
@@ -43,7 +46,7 @@ func _fedora(p: Vector3) -> float:
 	return _smin(crown, brim, 0.02)
 
 
-## 트렌치코트: 긴소매, V자 깃, 무릎까지 오는 자락
+## 비밀요원 코트: 긴소매, V자 앞섶, 목을 감싸며 위로 선 깃, 무릎까지 오는 자락
 func _coat(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
 	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.03
@@ -53,8 +56,12 @@ func _coat(p: Vector3) -> float:
 	d = _smax(d, 0.3 - p.y, 0.02) # 밑단(무릎 위)
 	d = _smax(d, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리
 	d = _smax(d, minf(p.z - 0.04, (p.y - 0.85) * 0.6 - q.x), 0.01) # V자 앞섶
-	var collar: float = _capsule(q, Vector3(0.17, 1.12, 0.09), Vector3(0.02, 0.86, 0.165), 0.032)
-	return _smin(d, collar, 0.012)
+	# 세운 깃: 목 둘레를 감싸며 위로 벌어진다(머리보다 넓게). 앞은 트여 있다
+	var r: float = Vector2(p.x, p.z * 1.1).length()
+	var collar: float = absf(r - (0.17 + (p.y - 1.08) * 0.4)) - 0.022
+	collar = _smax(collar, absf(p.y - 1.2) - 0.12, 0.01)
+	collar = _smax(collar, minf(p.z - 0.05, 0.09 - q.x), 0.01)
+	return _smin(d, collar, 0.015)
 
 
 ## 코트 왼쪽 가슴 배지

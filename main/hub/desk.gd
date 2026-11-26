@@ -9,10 +9,26 @@ const TOP_Y: float = -2.7 # 책상 윗면 높이(월드). 화면 약 805px
 const DEPTH: float = 1.6
 const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
 const HERO_SCALE: float = 1.8
+## 주인공의 작전 행동. xs = 설 수 있는 위치(x) 후보, face = 바라보는 방향(0 = 화면, PI = 보드),
+## lift = 의자 위에 올라선 높이, prop = 손에 드는 소품, hide = 손에 들면 책상에서 숨길 소품, desk = 책상에 펼칠 소품
+const ACTIONS: Dictionary = {
+	&"think": {"xs": [-3.2, 0.6, 4.0], "face": 0.0},
+	&"point": {"xs": [-4.5, 1.8], "face": 2.6, "prop": &"pointer"},
+	&"coffee": {"xs": [-1.5, 3.0], "face": 3.0, "prop": &"mug", "hide": "mug"},
+	&"map": {"xs": [-2.0, 2.2], "face": 0.0, "desk": "map"},
+	&"phone": {"xs": [-4.0, 4.5], "face": 0.5, "prop": &"phone"},
+	&"pin": {"xs": [-3.5, 0.0, 3.2], "face": PI, "lift": 0.5, "prop": &"pin"},
+	&"magnifier": {"xs": [-0.8, 3.6], "face": 2.9, "prop": &"magnifier", "hide": "magnifier"},
+	&"write": {"xs": [-3.0, 1.5], "face": 0.2, "prop": &"pen", "desk": "notepad"},
+}
+
+## 직전에 한 행동. 작전본부실에 다시 들어와도 같은 행동은 고르지 않는다(게임이 켜져 있는 동안 유지)
+static var last_action: StringName = &""
 
 var _camera: Camera3D
 var _folder: Node3D
 var _hero: Protagonist
+var _desk_props: Dictionary = {} # 이름 -> Node3D (mug, magnifier)
 
 
 func _ready() -> void:
@@ -25,25 +41,46 @@ func _ready() -> void:
 	_camera.rotation.x = -tilt
 	_camera.current = true
 	add_child(_camera)
-	var sun: DirectionalLight3D = DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, 25, 0)
+	var sun: DirectionalLight3D = DirectionalLight3D.new() # 위에서 비추는 따뜻한 백색 조명
+	sun.rotation_degrees = Vector3(-78, 12, 0)
+	sun.light_color = PALETTE.lamp_light
+	sun.light_energy = 1.15
 	sun.shadow_enabled = true
 	sun.shadow_opacity = 0.45
 	add_child(sun)
 	var env: Environment = Environment.new()
 	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color.WHITE
-	env.ambient_light_energy = 0.6
+	env.ambient_light_color = PALETTE.lamp_light
+	env.ambient_light_energy = 0.55
 	var we: WorldEnvironment = WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
 	_build()
 
 
-## 주인공 복장 단계(끝낸 작전 수)
-func set_stage(done: int) -> void:
+## 주인공 복장 단계(끝낸 작전 수)를 정하고, 직전과 다른 작전 행동을 무작위 위치에서 시작한다
+## force는 확인용(비우면 무작위)
+func set_stage(done: int, force: StringName = &"") -> void:
 	_hero.set_stage(done)
+	var choices: Array = ACTIONS.keys().filter(func(k: StringName) -> bool: return k != last_action)
+	var act_name: StringName = force if not force.is_empty() else choices.pick_random()
+	last_action = act_name
+	var a: Dictionary = ACTIONS[act_name]
+	var x: float = a["xs"].pick_random()
+	_hero.position = Vector3(x, TOP_Y - 1.05 + a.get("lift", 0.0), -0.5)
+	_hero.rotation.y = a["face"]
+	_hero.act(String(act_name), a.get("prop", &""))
+	if a.has("hide"):
+		_desk_props[a["hide"]].hide()
+	match a.get("desk", ""):
+		"map": # 책상에 펼친 마을 지도
+			var map: MeshInstance3D = _box(Vector3(1.8, 0.02, 1.1), Vector3(x, TOP_Y + 0.01, 0.15), PALETTE.water.lightened(0.45))
+			map.rotation.y = 0.08
+			_box(Vector3(1.2, 0.025, 0.04), Vector3(x - 0.1, TOP_Y + 0.02, 0.1), PALETTE.road)
+			_box(Vector3(0.04, 0.025, 0.8), Vector3(x + 0.3, TOP_Y + 0.02, 0.15), PALETTE.road)
+		"notepad":
+			_box(Vector3(0.8, 0.04, 0.55), Vector3(x - 0.2, TOP_Y + 0.02, 0.2), PALETTE.memo)
 
 
 ## 리더보드 서류철이 화면에 찍히는 위치(버튼을 얹을 자리)
@@ -59,10 +96,9 @@ func _build() -> void:
 	for x in [-6.0, 0.0, 6.0]: # 서랍 손잡이
 		_box(Vector3(0.6, 0.08, 0.08), Vector3(x, TOP_Y - 0.6, DEPTH / 2.0 + 0.02), PALETTE.iron)
 
-	# 주인공: 책상 뒤에 서서 허리 아래는 책상에 가린다
+	# 주인공: 책상 뒤에 서서 허리 아래는 책상에 가린다. 위치·행동은 set_stage()에서 정한다
 	_hero = PROTAGONIST.instantiate()
 	_hero.scale = Vector3.ONE * HERO_SCALE
-	_hero.position = Vector3(4.4, TOP_Y - 1.05, -0.5)
 	add_child(_hero)
 
 	# 스탠드(왼쪽)
@@ -77,6 +113,7 @@ func _build() -> void:
 
 	# 커피잔
 	var mug: Node3D = _group(Vector3(-5.6, TOP_Y, 0.2))
+	_desk_props["mug"] = mug
 	_cyl(mug, 0.3, 0.55, Vector3(0, 0.275, 0), PALETTE.paper)
 	_cyl(mug, 0.26, 0.02, Vector3(0, 0.55, 0), PALETTE.wood.darkened(0.45)) # 커피
 	var handle: MeshInstance3D = MeshInstance3D.new()
@@ -97,6 +134,7 @@ func _build() -> void:
 
 	# 돋보기(가운데 오른쪽)
 	var mag: Node3D = _group(Vector3(3.2, TOP_Y + 0.05, 0.25))
+	_desk_props["magnifier"] = mag
 	mag.rotation.y = 0.5
 	var ring: MeshInstance3D = MeshInstance3D.new()
 	var rt: TorusMesh = TorusMesh.new()

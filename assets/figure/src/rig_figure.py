@@ -142,6 +142,89 @@ def idle_pose(arm, f, ph):
     hips.keyframe_insert("location", frame=f)
 
 
+AXES = {"X": (1, 0, 0), "Y": (0, 1, 0), "Z": (0, 0, 1)}
+
+
+def turn(arm, name, rots, frame):
+    """블렌더 월드 축 기준 회전 여러 개를 차례로 적용(캐릭터는 -Y를 본다).
+    X: 아래로 뻗은 팔다리는 음수 = 앞으로 / 위로 뻗은 척추·머리는 양수 = 앞으로 숙임
+    Y: 팔 벌리기(왼팔 음수, 오른팔 양수 = 바깥으로) / 머리는 양수 = 왼쪽(+x)으로 갸웃
+    Z: 몸·머리 돌리기(양수 = 왼쪽(+x)을 봄)"""
+    q = Quaternion()
+    for axis, angle in rots:
+        q = Quaternion(AXES[axis], angle) @ q
+    pb = arm.pose.bones[name]
+    rest = pb.bone.matrix_local.to_quaternion()
+    pb.rotation_quaternion = rest.inverted() @ q @ rest
+    pb.keyframe_insert("rotation_quaternion", frame=frame)
+
+
+def act_pose(spec):
+    """spec(ph) -> {뼈 이름: [(축, 각도), ...]}. 적지 않은 뼈는 기본 자세"""
+    def pose(arm, f, ph):
+        rots = spec(ph)
+        for name in BONES:
+            if name != "hips":
+                turn(arm, name, rots.get(name, []), f)
+        hips = arm.pose.bones["hips"]
+        hips.location = (0, 0.006 * math.cos(ph), 0)  # 숨쉬듯 살짝
+        hips.keyframe_insert("location", frame=f)
+    return pose
+
+
+# 작전본부실 주인공의 작전 행동. 소품(커피잔·전화기 등)은 Godot에서 오른손(forearm.R 끝)에 붙인다
+ACTS = {
+    # 턱 괴고 구상: 오른손을 턱에, 왼팔은 배 앞으로
+    "think": lambda ph: {
+        "upper_arm.R": [("X", -1.2), ("Y", -0.35)], "forearm.R": [("X", -2.2)],
+        "upper_arm.L": [("X", -0.55), ("Y", 0.45)], "forearm.L": [("X", -1.5)],
+        "head": [("X", 0.12), ("Y", 0.08 * math.sin(ph))], "spine": [("X", 0.05)],
+    },
+    # 지시봉으로 보드를 탁탁 짚기
+    "point": lambda ph: {
+        "upper_arm.R": [("X", -2.45), ("Y", 0.15)], "forearm.R": [("X", -0.15 - 0.2 * max(0.0, math.sin(2 * ph)))],
+        "upper_arm.L": [("Y", -0.35)], "forearm.L": [("X", -1.9)],
+        "head": [("X", -0.3)], "spine": [("X", -0.08)],
+    },
+    # 커피 들고 보드 노려보기(가끔 홀짝)
+    "coffee": lambda ph: {
+        "upper_arm.R": [("X", -0.45 - 0.35 * max(0.0, math.sin(ph))), ("Y", -0.15)], "forearm.R": [("X", -1.7)],
+        "upper_arm.L": [("X", -0.1)], "forearm.L": [("X", -0.3)],
+        "head": [("X", 0.05)],
+    },
+    # 책상에 지도를 펴고 몸을 숙여 살피기
+    "map": lambda ph: {
+        "spine": [("X", 0.55)], "head": [("X", 0.35), ("Z", 0.2 * math.sin(ph))],
+        "upper_arm.L": [("X", -1.0), ("Y", -0.25)], "forearm.L": [("X", -0.3)],
+        "upper_arm.R": [("X", -1.0), ("Y", 0.25)], "forearm.R": [("X", -0.3)],
+    },
+    # 전화기를 귀에 대고 몰래 통화
+    "phone": lambda ph: {
+        "upper_arm.R": [("X", -0.35), ("Y", 0.55)], "forearm.R": [("X", -2.6)],
+        "upper_arm.L": [("Y", -0.4)], "forearm.L": [("X", -1.9)],
+        "head": [("Y", -0.15), ("Z", 0.12 * math.sin(ph))],
+    },
+    # 의자 위에서 높은 곳에 핀 꽂기
+    "pin": lambda ph: {
+        "upper_arm.R": [("X", -2.9), ("Y", 0.1)], "forearm.R": [("X", -0.1 - 0.15 * max(0.0, math.sin(2 * ph)))],
+        "upper_arm.L": [("X", -0.4)], "forearm.L": [("X", -0.8)],
+        "head": [("X", -0.35)], "spine": [("X", -0.1)],
+    },
+    # 돋보기로 메모 들여다보기
+    "magnifier": lambda ph: {
+        "upper_arm.R": [("X", -1.1), ("Y", -0.1)], "forearm.R": [("X", -1.4)],
+        "upper_arm.L": [("X", -0.4), ("Y", 0.2)], "forearm.L": [("X", -1.3)],
+        "head": [("X", 0.05), ("Z", 0.15 * math.sin(ph))], "spine": [("X", 0.1)],
+    },
+    # 메모장에 끄적이기
+    "write": lambda ph: {
+        "spine": [("X", 0.3)], "head": [("X", 0.4)],
+        "upper_arm.R": [("X", -0.7), ("Y", -0.1)], "forearm.R": [("X", -1.0 - 0.12 * math.sin(4 * ph))],
+        "upper_arm.L": [("X", -0.6), ("Y", 0.2)], "forearm.L": [("X", -1.0)],
+    },
+}
+
+
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.scene.render.fps = 24
@@ -160,6 +243,8 @@ def main():
     skin(load("Badge", 1.0), arm, only="spine")
     make_action(arm, "walk", walk_pose)
     make_action(arm, "idle", idle_pose)
+    for name, spec in ACTS.items():
+        make_action(arm, name, act_pose(spec))
     bpy.ops.export_scene.gltf(
         filepath=OUT,
         export_format="GLB",

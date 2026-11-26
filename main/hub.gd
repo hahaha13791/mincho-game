@@ -5,6 +5,7 @@ extends Control
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const LIST: MinigameList = preload("res://main/minigame_list.tres")
 const DESK: PackedScene = preload("res://main/hub/desk.tscn")
+const BOARD_SCALE: float = 0.85 # 주인공이 잘 보이게 보드를 줄인다
 const PINS: Array[String] = ["danger", "accent", "ballot_box", "mincho"] # 팔레트 이름. 메모마다 돌려 쓴다
 # 테스트용 채우기 프리셋(이름 -> 등급 목록). 목록은 순서대로 미니게임에 배정되고 모자라면 마지막 값을 쓴다
 const FILL_PRESETS: Dictionary = {
@@ -20,6 +21,7 @@ var _memos: Dictionary = {} # id -> MemoCard
 var _decor: Array[MemoCard] = []
 var _center: MemoCard
 var _strings: Control
+var _board: Control # 보드 전체(줄여서 벽에 건다)
 
 
 func _ready() -> void:
@@ -39,10 +41,15 @@ func _process(_delta: float) -> void:
 # --- 보드 ---
 
 func _build_board() -> void:
+	_board = Control.new()
+	_board.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_board.scale = Vector2.ONE * BOARD_SCALE
+	_board.position = Vector2((1920.0 - HubLayout.BOARD.size.x * BOARD_SCALE) / 2.0 - HubLayout.BOARD.position.x * BOARD_SCALE, 12.0)
+	add_child(_board)
 	var frame: Panel = _panel(HubLayout.BOARD, PALETTE.wood, 6)
-	add_child(frame)
+	_board.add_child(frame)
 	var cork_rect: Rect2 = HubLayout.BOARD.grow(-HubLayout.CORK_MARGIN)
-	add_child(_panel(cork_rect, PALETTE.cork, 0))
+	_board.add_child(_panel(cork_rect, PALETTE.cork, 0))
 	var speck: Control = Control.new() # 코르크 알갱이
 	speck.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	speck.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -52,7 +59,7 @@ func _build_board() -> void:
 		for i in 900:
 			var p: Vector2 = cork_rect.position + Vector2(rng.randf() * cork_rect.size.x, rng.randf() * cork_rect.size.y)
 			speck.draw_circle(p, rng.randf_range(1.0, 3.0), PALETTE.cork.darkened(rng.randf_range(0.08, 0.2))))
-	add_child(speck)
+	_board.add_child(speck)
 
 	for i in HubLayout.DECOR.size():
 		_decor.append(_make_decor(HubLayout.DECOR[i], i))
@@ -90,7 +97,24 @@ func _build_board() -> void:
 	_strings.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_strings.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_strings.draw.connect(_draw_strings)
-	add_child(_strings)
+	_board.add_child(_strings)
+
+	# 위에서 비추는 따뜻한 조명: 위쪽은 밝고 아래로 갈수록 어둑해진다
+	var light: TextureRect = TextureRect.new()
+	var grad: Gradient = Gradient.new()
+	grad.set_color(0, Color(PALETTE.lamp_light, 0.38))
+	grad.set_color(1, Color(0, 0, 0, 0.22))
+	grad.add_point(0.55, Color(PALETTE.lamp_light, 0.0))
+	var tex: GradientTexture2D = GradientTexture2D.new()
+	tex.gradient = grad
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, -0.15)
+	tex.fill_to = Vector2(0.5, 1.1)
+	light.texture = tex
+	light.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	light.set_anchors_preset(Control.PRESET_FULL_RECT)
+	light.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(light)
 
 
 func _make_decor(d: Dictionary, i: int) -> MemoCard:
@@ -116,7 +140,7 @@ func _make_decor(d: Dictionary, i: int) -> MemoCard:
 
 func _card(pos: Vector2, size_px: Vector2, tilt: float, paper: Color, pin: Color) -> MemoCard:
 	var card: MemoCard = MemoCard.new()
-	add_child(card)
+	_board.add_child(card)
 	card.setup(pos, size_px, tilt, paper, pin)
 	return card
 
