@@ -15,7 +15,7 @@ const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
 const SPACING: float = 3.0 # 한 박 동안 표가 가는 거리. 16분(0.25박) 간격 0.75가 표 폭보다 넓게
 const BALLOT_SIZE: Vector3 = Vector3(0.66, 0.06, 1.0) # 흐르는 방향(x)으로 좁은 쪽지
 const BELT_END: float = Conveyor.LENGTH / 2.0 # 레일 끝(화면 밖). 이 밖의 표는 숨긴다
-const CALL_LAG: float = 4.0 # 뒤 레일 가운데를 지난 뒤 찍는 자리에 오기까지 = 1마디
+const CALL_LAG: float = PianoRules.MEASURE # 뒤 레일 가운데를 지난 뒤 찍는 자리에 오기까지 = 1마디
 const PREVIEW_Z: float = -4.5 # 미리보기 레일(뒤쪽, 반대 방향)
 const WATCH_SHOW: float = 0.5 # 감시자 표 앞뒤로 감시자가 다 들어와 있는 시간(박)
 const WATCH_MOVE: float = 0.15 # 감시자가 들어오고 나가는 데 걸리는 박

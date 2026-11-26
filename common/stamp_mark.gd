@@ -3,7 +3,7 @@ extends Node3D
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 
-var ink: Color = PALETTE.danger
+@export var ink: Color = PALETTE.danger # export여야 duplicate()로 복사할 때 색이 따라간다
 
 
 func _ready() -> void:
