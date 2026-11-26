@@ -9,6 +9,8 @@ const TOP_Y: float = -2.7 # 책상 윗면 높이(월드). 화면 약 805px
 const DEPTH: float = 1.6
 ## 책상(상판·소품) 앞뒤 위치. 뒷면이 주인공(z -0.5) 몸 앞에 오게 앞으로 뺀다. 겹치면 다리가 상판을 뚫고 잘려 보인다
 const DESK_Z: float = 0.75
+const FLOOR_Y: float = TOP_Y - 1.2 # 바닥 = 주인공 발. 책상 높이 1.2 : 주인공 키 약 3 (실제 책상 비율)
+const DESK_W: float = 18.6 # 양 끝 다리가 화면(폭 약 19.2) 안에 보이게
 const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
 const HERO_SCALE: float = 1.8
 ## 주인공의 작전 행동. xs = 설 수 있는 위치(x) 후보, face = 바라보는 방향(0 = 화면, PI = 보드),
@@ -72,7 +74,7 @@ func set_stage(done: int, force: StringName = &"") -> void:
 	var a: Dictionary = ACTIONS[act_name]
 	var x: float = a["xs"].pick_random()
 	# 책상을 앞으로 뺀 만큼(DESK_Z × tan 11°) 내려야 책상 위로 보이는 몸 높이가 같다
-	_hero.position = Vector3(x, TOP_Y - 1.2 + a.get("lift", 0.0), -0.5)
+	_hero.position = Vector3(x, FLOOR_Y + a.get("lift", 0.0), -0.5)
 	_hero.rotation.y = a["face"]
 	_hero.act(String(act_name), a.get("prop", &""))
 	if a.has("hide"):
@@ -97,9 +99,18 @@ func _build() -> void:
 	_desk_root.position.z = DESK_Z
 	add_child(_desk_root)
 	var wood: Color = PALETTE.wood.lightened(0.12)
-	_box(Vector3(22, 0.16, DEPTH), Vector3(0, TOP_Y - 0.08, 0), wood) # 상판
-	_box(Vector3(22, 0.06, 0.06), Vector3(0, TOP_Y - 0.03, DEPTH / 2.0), wood.lightened(0.15)) # 앞 모서리
-	_box(Vector3(22, 5.0, 0.1), Vector3(0, TOP_Y - 2.6, DEPTH / 2.0 - 0.05), wood.darkened(0.15)) # 앞판(화면 아래 끝까지)
+	_box(Vector3(DESK_W, 0.16, DEPTH), Vector3(0, TOP_Y - 0.08, 0), wood) # 상판
+	_box(Vector3(DESK_W, 0.06, 0.06), Vector3(0, TOP_Y - 0.03, DEPTH / 2.0), wood.lightened(0.15)) # 앞 모서리
+	# 상판 아래 앞뒤 띠 + 다리 4개. 다리 사이로 책상 밑(어두운 벽·바닥·주인공 다리)이 보여야 책상으로 읽힌다
+	for z in [DEPTH / 2.0 - 0.1, -DEPTH / 2.0 + 0.1]:
+		_box(Vector3(DESK_W - 0.4, 0.12, 0.06), Vector3(0, TOP_Y - 0.22, z), wood.darkened(0.1))
+		for x in [-DESK_W / 2.0 + 0.3, DESK_W / 2.0 - 0.3]:
+			_box(Vector3(0.22, TOP_Y - FLOOR_Y, 0.22), Vector3(x, (TOP_Y + FLOOR_Y) / 2.0, z), wood.darkened(0.1))
+	# 바닥(화면 아래 끝까지)과 책상 밑 뒷벽. 책상과 따로 앞뒤 위치를 잡는다
+	_box_in(self, Vector3(26, 0.1, 12), Vector3(0, FLOOR_Y - 0.05, 4.0), PALETTE.wood.darkened(0.4))
+	# 뒷벽은 뒤에 있어 화면에서 더 높이 찍힌다. 상판 위로 삐져나오지 않게 낮춘다
+	var wall_top: float = TOP_Y - 0.4
+	_box_in(self, Vector3(26, wall_top - FLOOR_Y, 0.1), Vector3(0, (wall_top + FLOOR_Y) / 2.0, -1.6), PALETTE.wood.darkened(0.6)) # 책상 밑 그늘
 
 	# 주인공: 책상 뒤에 서서 허리 아래는 책상에 가린다. 위치·행동은 set_stage()에서 정한다
 	_hero = PROTAGONIST.instantiate()
