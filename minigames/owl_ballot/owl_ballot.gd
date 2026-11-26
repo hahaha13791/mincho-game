@@ -9,6 +9,7 @@ const CONFIG: OwlConfig = preload("res://minigames/owl_ballot/owl_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const BALLOT_BOX: PackedScene = preload("res://minigames/owl_ballot/props/ballot_box.tscn")
 const CELL: float = 1.2
+const WALK_PART: float = 0.7 # 불 켜진 동안 감시자 움직임 중 걷기 비율. 나머지는 다음 방향으로 몸 돌리기
 ## 엄폐물 겉모습 서브씬. 기준 칸이 원점, 회전 전 모양은 +x(열)·+z(행) 방향으로 뻗는다
 const PROPS: Dictionary = {
 	&"crates": preload("res://minigames/owl_ballot/props/crates.tscn"),
@@ -120,20 +121,30 @@ func _enter_light(duration: float, first: bool) -> void:
 			$HUD/StateLabel.text = "마지막 불! (이후 시간 초과)"
 
 
-# 불이 켜진 동안: 시야를 watch_hold초 보여 준 뒤 끄고, 감시자가 다음에 설 자리(path[cycle+1])로 걸어간다.
-# 다음 불이 켜질 때 _enter_light가 같은 자리에 세우므로 이어진다. 판정은 켜지는 순간뿐이라 걷는 동안엔 시야가 없다
+# 불이 켜진 동안: 시야를 watch_hold초 보여 준 뒤 끄고, 감시자가 다음에 설 자리로 걸어간 다음 다음에 볼 방향으로 몸을 돌린다.
+# 두리번 칸이면 걷지 않고 몸만 돌린다. 다음 불이 켜질 때 _enter_light가 같은 자리·방향에 세우므로 이어진다.
+# 판정은 켜지는 순간뿐이라 걷는 동안엔 시야가 없다
 func _walk_watchers() -> void:
 	var walk_t: float = _light_dur - _t_left - CONFIG.watch_hold
 	var p: float = clampf(walk_t / maxf(_light_dur - CONFIG.watch_hold, 0.01), 0.0, 1.0)
 	if walk_t > 0.0:
 		for tile in _vision_tiles.values():
 			tile.visible = false
+	var move_p: float = clampf(p / WALK_PART, 0.0, 1.0)
+	var turn_p: float = clampf((p - WALK_PART) / (1.0 - WALK_PART), 0.0, 1.0)
 	for i in _watchers.size():
 		var path: Array = OwlLevel.WATCHERS[i]["path"]
-		var from: Vector3 = _world(path[_cycle % path.size()])
-		var to: Vector3 = _world(path[(_cycle + 1) % path.size()])
-		_watchers[i].position = from.lerp(to, p)
-		_watchers[i].set_walking(p > 0.0 and p < 1.0)
+		var now: Dictionary = OwlRules.watcher_at(path, _cycle)
+		var nxt: Dictionary = OwlRules.watcher_at(path, _cycle + 1)
+		var moving: bool = now["pos"] != nxt["pos"]
+		_watchers[i].position = _world(now["pos"]).lerp(_world(nxt["pos"]), move_p)
+		_watchers[i].set_walking(moving and move_p > 0.0 and move_p < 1.0)
+		_watchers[i].rotation.y = lerp_angle(_facing(now["dir"]), _facing(nxt["dir"]), turn_p)
+
+
+# 격자 방향 → 인형 y회전(Watcher.face와 같은 식, 인형 앞 = +z)
+func _facing(dir: Vector2i) -> float:
+	return atan2(dir.x, dir.y)
 
 
 func _enter_dark() -> void:

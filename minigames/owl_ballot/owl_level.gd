@@ -34,11 +34,19 @@ const PIECES: Array[Dictionary] = [
 ]
 const START: Vector2i = Vector2i(0, 0)
 const BOXES: Array[Vector2i] = [Vector2i(5, 1), Vector2i(10, 2), Vector2i(2, 7), Vector2i(11, 6)]
-## 감시자: path = 불이 켜질 때마다 다음 위치(순환), range = 시야 칸 수. 바라보는 방향 = 다음 위치 쪽
+## 감시자: path = 불이 켜질 때마다 다음 칸(순환), range = 시야 칸 수.
+## 칸이 Vector2i면 다음 자리 쪽을 보고, [위치, 방향]이면 그 자리에서 그 방향을 둘러본다(두리번)
+const E: Vector2i = Vector2i(1, 0)
+const W: Vector2i = Vector2i(-1, 0)
+const N: Vector2i = Vector2i(0, -1)
+const S: Vector2i = Vector2i(0, 1)
 const WATCHERS: Array[Dictionary] = [
-	{"path": [Vector2i(7, 0), Vector2i(7, 2), Vector2i(7, 4), Vector2i(7, 6), Vector2i(7, 8), Vector2i(7, 6), Vector2i(7, 4), Vector2i(7, 2)], "range": 3},
-	{"path": [Vector2i(0, 4), Vector2i(3, 4), Vector2i(6, 4), Vector2i(9, 4), Vector2i(12, 4), Vector2i(9, 4), Vector2i(6, 4), Vector2i(3, 4)], "range": 3},
-	{"path": [Vector2i(0, 8), Vector2i(3, 8), Vector2i(6, 8), Vector2i(3, 8)], "range": 3},
+	# 세로 통로: 가운데 교차점에서 내려갈 땐 오른쪽, 올라올 땐 왼쪽을 둘러본다
+	{"path": [Vector2i(7, 0), Vector2i(7, 2), Vector2i(7, 4), [Vector2i(7, 4), E], Vector2i(7, 6), Vector2i(7, 8), Vector2i(7, 6), Vector2i(7, 4), [Vector2i(7, 4), W], Vector2i(7, 2)], "range": 3},
+	# 가로 통로: 가운데쯤에서 갈 땐 위, 올 땐 아래를 둘러본다
+	{"path": [Vector2i(0, 4), Vector2i(3, 4), Vector2i(6, 4), [Vector2i(6, 4), N], Vector2i(9, 4), Vector2i(12, 4), Vector2i(9, 4), Vector2i(6, 4), [Vector2i(6, 4), S], Vector2i(3, 4)], "range": 3},
+	# 아래 통로: 투표함 쪽 위를 한 번 둘러본다
+	{"path": [Vector2i(0, 8), Vector2i(3, 8), [Vector2i(3, 8), N], Vector2i(6, 8), Vector2i(3, 8)], "range": 3},
 ]
 
 static var _map: Array[String] = []

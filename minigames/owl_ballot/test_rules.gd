@@ -55,8 +55,8 @@ func _check_pieces(map: Array[String]) -> void:
 	var keep: Array[Vector2i] = [OwlLevel.START]
 	keep.append_array(OwlLevel.BOXES)
 	for wd in OwlLevel.WATCHERS:
-		for c in wd["path"]:
-			keep.append(c)
+		for e in wd["path"]:
+			keep.append(OwlRules.path_pos(e))
 	for c in keep:
 		_check(not OwlRules.is_wall(map, c), "엄폐물이 막으면 안 되는 칸 %s" % c)
 
@@ -74,6 +74,10 @@ func _init() -> void:
 	var w: Dictionary = OwlRules.watcher_at(path0, 0)
 	_check(w["pos"] == path0[0] and w["dir"] == Vector2i((path0[1] - path0[0]).sign()), "감시자 첫 위치와 방향")
 	_check(OwlRules.watcher_at(path0, path0.size())["pos"] == path0[0], "경로는 순환")
+	var look_path: Array = [Vector2i(1, 1), [Vector2i(1, 1), Vector2i(0, -1)], Vector2i(3, 1)]
+	_check(OwlRules.watcher_at(look_path, 0)["dir"] == Vector2i(1, 0), "두리번 칸을 건너뛰고 다음 자리 쪽을 봄")
+	var look: Dictionary = OwlRules.watcher_at(look_path, 1)
+	_check(look["pos"] == Vector2i(1, 1) and look["dir"] == Vector2i(0, -1), "두리번 칸은 제자리에서 지정 방향")
 	var v: Array[Vector2i] = OwlRules.vision(map, Vector2i(8, 5), Vector2i(0, 1), 2)
 	_check(v == [Vector2i(8, 5), Vector2i(8, 6), Vector2i(8, 7)], "시야는 감시자 칸 + range칸")
 	var blocked: Array[Vector2i] = OwlRules.vision(map, Vector2i(2, 0), Vector2i(0, 1), 3)
