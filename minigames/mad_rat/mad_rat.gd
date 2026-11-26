@@ -1,6 +1,7 @@
 extends Node3D
 ## 미친 쥐(id: mad_rat). 갈림길로 걸어오는 주민은 가운데 표지판이 가리키는 쪽으로 간다.
-## 버튼은 표지판만 돌린다. 민초(초록 옷)는 왼쪽 투표소, 반민초(갈색 옷)는 오른쪽 민트초코 아이스크림가게. 모자는 무시한다.
+## 버튼은 표지판만 돌린다. 민초는 왼쪽 투표소, 반민초는 오른쪽 민트초코 아이스크림가게.
+## 웨이브식: 웨이브가 시작될 때마다 세로길 옆에 새 규칙 표지판이 꽂히고, 규칙은 쌓인다(MadRatRules.Twist).
 
 enum State { TUTORIAL, PLAYING, ENDED }
 
@@ -12,14 +13,25 @@ const JUNCTION_Z: float = 0.0 # 이 선에 닿는 순간 표지판 방향으로 
 const EXIT_X: float = 6.5
 const SIGN_POS: Vector3 = Vector3(0.0, 0.0, 1.6) # 갈림길 바로 앞(카메라 쪽). 주민 길을 막지 않는다
 const SHOP_WAIT: float = 0.7 # 가게 앞에서 멈칫하는 시간
-const TUTORIAL_TEXT: String = "주민이 갈림길로 걸어옵니다. 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼으로 표지판을 돌리세요. 초록 옷(민초)은 [투표소], 갈색 옷(반민초)은 [민트초코 아이스크림가게]!\n모자는 헷갈리게 하는 장식입니다. 옷 색만 보세요.\n점점 빨라집니다!"
+const TUTORIAL_TEXT: String = "주민이 갈림길로 걸어옵니다. 가운데 표지판이 가리키는 쪽으로 갑니다.\n버튼으로 표지판을 돌리세요. 민초는 [투표소], 반민초는 [민트초코 아이스크림가게]!\n웨이브마다 길가에 새 규칙 표지판이 꽂힙니다. 규칙은 계속 쌓입니다!"
+# 웨이브 순서대로 꽂히는 규칙 표지판 [문구, 자리]. 세로길 양옆 빈 땅에 앞 왼쪽 → 앞 오른쪽 → 뒤 왼쪽 → 뒤 오른쪽
+const RULE_SIGNS: Array = [
+	["민트 셔츠 → 투표소\n갈색 셔츠 → 가게", Vector3(-3.5, 0.0, -2.6)],
+	["모자는 무시!", Vector3(3.5, 0.0, -2.6)],
+	["코트를 입었으면\n완장 색을 봐라", Vector3(-3.5, 0.0, -6.6)],
+	["선글라스 = 변장\n셔츠 색 반대로!", Vector3(3.5, 0.0, -6.6)],
+]
 
 @export var id: StringName = &"mad_rat"
 
 var _state: State = State.TUTORIAL
+var _wave: int = -1
+var _wave_left: int = 0 # 이번 웨이브에서 아직 안 나온 주민 수
 var _spawned: int = 0
+var _total: int = 0
 var _wrong: int = 0
 var _next_spawn: float = 0.0
+var _sfx: AudioStreamPlayer
 var _queue: Array[Villager] = [] # 갈림길에 가까운 주민이 앞(0번)
 var _sign_dir: MadRatRules.Dir = MadRatRules.Dir.LEFT
 var _sign_arrow: Node3D
@@ -34,6 +46,10 @@ func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
 	_camera.look_at_from_position(Vector3(0.0, 9.0, 8.0), Vector3(0.0, 0.0, -2.0))
 	_build_visuals()
+	_sfx = AudioStreamPlayer.new()
+	add_child(_sfx)
+	for n in CONFIG.wave_counts:
+		_total += n
 	$HUD/LeftButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.LEFT))
 	$HUD/RightButton.pressed.connect(_turn_sign.bind(MadRatRules.Dir.RIGHT))
 	Tutorial.open(self, TUTORIAL_TEXT, _start)
@@ -42,33 +58,51 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _state != State.PLAYING:
 		return
-	var p: float = float(_spawned) / CONFIG.villager_count
-	if _spawned < CONFIG.villager_count:
+	if _wave_left > 0:
 		_next_spawn -= delta
 		if _next_spawn <= 0.0:
-			_spawn(p)
-			_next_spawn = lerpf(CONFIG.gap_start, CONFIG.gap_end, p)
-	var step: float = lerpf(CONFIG.speed_start, CONFIG.speed_end, p) * delta
+			_spawn()
+			_next_spawn = CONFIG.wave_gap[_wave]
+	var step: float = CONFIG.wave_speed[_wave] * delta
 	for v in _queue:
 		v.position.z += step
 	if not _queue.is_empty() and _queue[0].position.z >= JUNCTION_Z:
 		_send(_queue.pop_front())
-	if _spawned >= CONFIG.villager_count and _queue.is_empty() and _villagers.get_child_count() == 0:
-		_finish() # 마지막 주민이 가게로 끌려 들어가는 것까지 보고 끝낸다
+	if _wave_left == 0 and _queue.is_empty() and _villagers.get_child_count() == 0:
+		# 이번 웨이브 마지막 주민이 가게로 끌려 들어가는 것까지 보고 넘어간다
+		if _wave + 1 < CONFIG.wave_counts.size():
+			_begin_wave(_wave + 1)
+		else:
+			_finish()
 
 
 func _start() -> void:
 	_state = State.PLAYING
+	_begin_wave(0)
+
+
+func _begin_wave(w: int) -> void:
+	_wave = w
+	_wave_left = CONFIG.wave_counts[w]
+	_next_spawn = CONFIG.wave_pause
+	_hint.text = "새 규칙!" if w > 0 else ""
+	_plant_sign(w)
 	_refresh()
 
 
-func _spawn(p: float) -> void:
+func _spawn() -> void:
 	var v: Villager = VILLAGER.instantiate()
 	_villagers.add_child(v)
 	v.position = Vector3(0.0, 0.0, SPAWN_Z)
-	v.setup(randf() < CONFIG.mincho_ratio, randf() < lerpf(CONFIG.decoy_start, CONFIG.decoy_end, p))
+	var twist: MadRatRules.Twist = MadRatRules.Twist.NONE
+	var unlocked: Array[MadRatRules.Twist] = MadRatRules.unlocked_twists(_wave)
+	if not unlocked.is_empty() and randf() < CONFIG.twist_ratio:
+		twist = unlocked.pick_random()
+	v.setup(randf() < CONFIG.mincho_ratio, twist)
 	_queue.append(v)
+	_wave_left -= 1
 	_spawned += 1
+	_hint.text = ""
 	_refresh()
 
 
@@ -120,7 +154,7 @@ func _finish() -> void:
 
 
 func _refresh() -> void:
-	$HUD/ProgressLabel.text = "%d / %d명  실수 %d" % [_spawned, CONFIG.villager_count, _wrong]
+	$HUD/ProgressLabel.text = "웨이브 %d / %d   %d / %d명  실수 %d" % [_wave + 1, CONFIG.wave_counts.size(), _spawned, _total, _wrong]
 
 
 # --- 화면 ---
@@ -216,6 +250,39 @@ func _build_visuals() -> void:
 	shop_label.position = Vector3(shop_x, 4.6, JUNCTION_Z - 1.5) # 콘 뒤쪽 위. 위에서 보는 카메라라 콘과 겹치지 않게
 	add_child(shop_label)
 
+	_build_turn_sign()
+
+
+# 규칙 표지판: 위에서 떨어져 땅에 쿵 꽂힌다. 꽂힌 표지판은 끝까지 남는다
+func _plant_sign(w: int) -> void:
+	var s: Node3D = Node3D.new()
+	add_child(s)
+	var post: MeshInstance3D = _box(Vector3(0.18, 1.6, 0.18), PALETTE.wood)
+	post.position.y = 0.8
+	s.add_child(post)
+	var board: Node3D = Node3D.new()
+	board.position.y = 1.9
+	board.rotation.x = deg_to_rad(-25.0) # 위에서 내려다보는 카메라 쪽으로 살짝 눕힌다
+	s.add_child(board)
+	board.add_child(_box(Vector3(4.0, 1.4, 0.1), PALETTE.paper))
+	var label: Label3D = Label3D.new()
+	label.text = RULE_SIGNS[w][0]
+	label.font_size = 50
+	label.pixel_size = 0.01
+	label.outline_size = 0
+	label.modulate = PALETTE.stamp
+	label.position.z = 0.06
+	board.add_child(label)
+	var ground: Vector3 = RULE_SIGNS[w][1]
+	s.position = ground + Vector3(0.0, 8.0, 0.0)
+	var t: Tween = create_tween()
+	t.tween_property(s, "position", ground, 0.3).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
+	t.tween_callback(Beep.play.bind(_sfx, 80.0, 0.2))
+	t.tween_property(s, "scale", Vector3(1.1, 0.85, 1.1), 0.06)
+	t.tween_property(s, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func _build_turn_sign() -> void:
 	# 표지판: 기둥 + 회전하는 화살표 판. rotation.y 0 = 왼쪽(투표소), PI = 오른쪽(가게)
 	var post: MeshInstance3D = _box(Vector3(0.15, 1.6, 0.15), PALETTE.wood)
 	post.position = SIGN_POS + Vector3(0.0, 0.8, 0.0)

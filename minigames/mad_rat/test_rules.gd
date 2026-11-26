@@ -18,6 +18,15 @@ func _init() -> void:
 	_check(MadRatRules.judge(0, 0, 3) == Grade.Rank.PERFECT, "무실수는 완전범죄")
 	_check(MadRatRules.judge(3, 0, 3) == Grade.Rank.SUCCESS, "경계값은 미션성공")
 	_check(MadRatRules.judge(4, 0, 3) == Grade.Rank.CAUGHT, "초과는 적발")
+	_check(MadRatRules.unlocked_twists(0).is_empty(), "웨이브 1은 변칙 없음")
+	_check(MadRatRules.unlocked_twists(1) == [MadRatRules.Twist.HAT], "웨이브 2는 모자만")
+	_check(MadRatRules.unlocked_twists(3).size() == 3, "웨이브 4는 변칙 전부")
+	_check(MadRatRules.unlocked_twists(9).size() == 3, "웨이브가 더 많아도 변칙은 셋")
+
+	var cfg: MadRatConfig = load("res://minigames/mad_rat/mad_rat_config.tres")
+	var n: int = cfg.wave_counts.size()
+	_check(cfg.wave_speed.size() == n and cfg.wave_gap.size() == n, "웨이브 배열 길이가 같음")
+	_check(n <= 4, "규칙 표지판(4개)보다 웨이브가 많지 않음")
 
 	print("TEST OK" if _fails == 0 else "TEST FAILED: %d" % _fails)
 	quit(_fails)

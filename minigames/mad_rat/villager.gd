@@ -7,6 +7,7 @@ const PALETTE: Palette = preload("res://common/style/palette.tres")
 
 var is_mincho: bool = true
 
+
 @onready var _figure: Node3D = $Figure
 
 
@@ -14,15 +15,22 @@ func _ready() -> void:
 	FigureLook.play(_figure, "walk")
 
 
-## 옷 색은 is_mincho가 정한다. decoy_hat이면 반대 편 색 모자를 쓴다(헷갈리게 하는 단서, 판정에는 무관)
-func setup(mincho: bool, decoy_hat: bool) -> void:
+## 정체는 mincho. 변칙(twist)에 따라 겉모습만 바뀐다(판정 규칙은 MadRatRules.Twist 설명)
+func setup(mincho: bool, twist: MadRatRules.Twist) -> void:
 	is_mincho = mincho
-	var outfit: Dictionary = {
-		"Body": PALETTE.doll,
-		"Shirt": PALETTE.mincho if mincho else PALETTE.anti_mincho,
-	}
-	if decoy_hat:
-		outfit["Hat"] = PALETTE.anti_mincho if mincho else PALETTE.mincho
+	var own: Color = PALETTE.mincho if mincho else PALETTE.anti_mincho
+	var other: Color = PALETTE.anti_mincho if mincho else PALETTE.mincho
+	var outfit: Dictionary = {"Body": PALETTE.doll, "Shirt": own}
+	match twist:
+		MadRatRules.Twist.HAT:
+			outfit["Hat"] = other
+		MadRatRules.Twist.COAT:
+			outfit.erase("Shirt")
+			outfit["Coat"] = PALETTE.suit
+			outfit["Armband"] = own
+		MadRatRules.Twist.GLASSES:
+			outfit["Shirt"] = other
+			outfit["Sunglasses"] = PALETTE.sunglasses
 	FigureLook.dress(_figure, outfit)
 
 
@@ -35,7 +43,7 @@ func exclaim(text: String) -> void:
 	label.pixel_size = 0.01
 	label.outline_size = 24
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.position.y = 2.6
+	label.position.y = 3.3
 	add_child(label)
 	label.scale = Vector3.ZERO
 	create_tween().tween_property(label, "scale", Vector3.ONE, 0.15).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
