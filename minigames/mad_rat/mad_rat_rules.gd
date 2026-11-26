@@ -18,6 +18,12 @@ static func unlocked_twists(wave: int) -> Array[Twist]:
 	return all.slice(0, clampi(wave, 0, all.size()))
 
 
+## 웨이브 wave에서 새로 열린 변칙(그 웨이브 규칙 표지판의 사례). 새로 열린 게 없으면 NONE
+static func new_twist(wave: int) -> Twist:
+	var now: Array[Twist] = unlocked_twists(wave)
+	return now.back() if now.size() > unlocked_twists(wave - 1).size() else Twist.NONE
+
+
 ## wrong = 잘못 보냈거나 놓친 주민 수
 static func judge(wrong: int, perfect_wrong: int, success_wrong: int) -> Grade.Rank:
 	if wrong <= perfect_wrong:

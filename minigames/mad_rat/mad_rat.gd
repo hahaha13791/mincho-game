@@ -19,7 +19,7 @@ const TUTORIAL_TEXT: String = "주민이 갈림길에 오면 가운데 표지판
 const RULE_SIGNS: Array = [
 	["민트 셔츠 → 투표소\n갈색 셔츠 → 가게", Vector3(-3.5, 0.0, -2.6)],
 	["모자는 무시!", Vector3(3.5, 0.0, -2.6)],
-	["코트를 입었으면\n완장 색을 봐라", Vector3(-3.5, 0.0, -6.6)],
+	["코트는 완장 확인!", Vector3(-3.5, 0.0, -6.6)],
 	["선글라스 = 변장\n셔츠 색 반대로!", Vector3(3.5, 0.0, -6.6)],
 ]
 
@@ -28,6 +28,7 @@ const RULE_SIGNS: Array = [
 var _state: State = State.TUTORIAL
 var _wave: int = -1
 var _wave_left: int = 0 # 이번 웨이브에서 아직 안 나온 주민 수
+var _example_at: int = 0 # 이번 웨이브에서 새 규칙 사례가 나올 순번(0부터)
 var _spawned: int = 0
 var _total: int = 0
 var _wrong: int = 0
@@ -86,6 +87,7 @@ func _start() -> void:
 func _begin_wave(w: int) -> void:
 	_wave = w
 	_wave_left = CONFIG.wave_counts[w]
+	_example_at = randi_range(0, (_wave_left - 1) / 2) # 새 규칙 사례는 웨이브 앞쪽 절반 중 한 명
 	_next_spawn = CONFIG.wave_pause
 	if w < RULE_SIGNS.size():
 		_hint.text = "새 규칙!" if w > 0 else ""
@@ -103,6 +105,9 @@ func _spawn() -> void:
 	var unlocked: Array[MadRatRules.Twist] = MadRatRules.unlocked_twists(_wave)
 	if not unlocked.is_empty() and randf() < CONFIG.twist_ratio:
 		twist = unlocked.pick_random()
+	var new_twist: MadRatRules.Twist = MadRatRules.new_twist(_wave)
+	if new_twist != MadRatRules.Twist.NONE and CONFIG.wave_counts[_wave] - _wave_left == _example_at:
+		twist = new_twist # 새 규칙이 꽂힌 웨이브에만 그 사례가 꼭 한 명 나온다
 	v.setup(randf() < CONFIG.mincho_ratio, twist)
 	_queue.append(v)
 	_wave_left -= 1

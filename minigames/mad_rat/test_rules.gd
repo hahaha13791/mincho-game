@@ -22,6 +22,11 @@ func _init() -> void:
 	_check(MadRatRules.unlocked_twists(1) == [MadRatRules.Twist.HAT], "웨이브 2는 모자만")
 	_check(MadRatRules.unlocked_twists(3).size() == 3, "웨이브 4는 변칙 전부")
 	_check(MadRatRules.unlocked_twists(9).size() == 3, "웨이브가 더 많아도 변칙은 셋")
+	_check(MadRatRules.new_twist(0) == MadRatRules.Twist.NONE, "웨이브 1은 보장할 사례 없음")
+	_check(MadRatRules.new_twist(1) == MadRatRules.Twist.HAT, "웨이브 2는 모자 사례 보장")
+	_check(MadRatRules.new_twist(2) == MadRatRules.Twist.COAT, "웨이브 3은 코트 사례 보장")
+	_check(MadRatRules.new_twist(3) == MadRatRules.Twist.GLASSES, "웨이브 4는 선글라스 사례 보장")
+	_check(MadRatRules.new_twist(4) == MadRatRules.Twist.NONE, "익히기 웨이브는 보장 없음")
 
 	var cfg: MadRatConfig = load("res://minigames/mad_rat/mad_rat_config.tres")
 	var n: int = cfg.wave_counts.size()
