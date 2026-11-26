@@ -14,14 +14,31 @@ func _init() -> void:
 	var cfg: PianoConfig = PianoConfig.new()
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = 1
-	var b: Array[Dictionary] = PianoRules.build(cfg, rng)
-	_check(b.size() == cfg.beats, "박자 수만큼 생성")
-	var early_ok: bool = true
-	for i in cfg.mix_from:
-		early_ok = early_ok and b[i]["anti"] and not b[i]["watcher"]
-	_check(early_ok, "초반은 전부 반민초 표, 감시자 없음")
-	_check(b[cfg.watch_from]["watcher"] and b[cfg.watch_from + cfg.watch_gap]["watcher"], "감시자는 일정 간격")
-	_check(not b[cfg.watch_from + 1]["watcher"], "감시자 간격 사이는 없음")
+	for run in 50: # 무작위 패턴이라 여러 번 만들어 본다
+		var b: Array[Dictionary] = PianoRules.build(cfg, rng)
+		var gaps: PackedFloat32Array = PianoRules.half_gaps(b)
+		var sorted_ok: bool = true
+		var early_ok: bool = true
+		var watch_per_measure: Array[int] = []
+		watch_per_measure.resize(cfg.measures)
+		var watch_gap_ok: bool = true
+		for i in b.size():
+			var t: float = b[i]["time"]
+			sorted_ok = sorted_ok and (i == 0 or t > b[i - 1]["time"])
+			if t < cfg.vary_from * 4.0:
+				early_ok = early_ok and b[i]["anti"] and not b[i]["watcher"] and is_equal_approx(t, roundf(t))
+			if b[i]["watcher"]:
+				watch_per_measure[floori(t / 4.0)] += 1
+				watch_gap_ok = watch_gap_ok and gaps[i] * 2.0 >= PianoRules.WATCH_MIN_GAP
+		_check(sorted_ok, "표는 시간순, 같은 시각 없음")
+		_check(b[-1]["time"] < cfg.measures * 4.0, "마지막 표는 마지막 마디 안")
+		_check(early_ok, "초반은 정박의 반민초 표, 감시자 없음")
+		_check(watch_gap_ok, "감시자 표는 옆 표와 충분히 떨어짐")
+		for m in cfg.measures:
+			_check(watch_per_measure[m] == (1 if m >= cfg.watch_from else 0), "감시자는 %d마디부터 마디마다 하나 (%d마디)" % [cfg.watch_from, m])
+	var sample: Array[Dictionary] = [{"time": 0.0}, {"time": 1.0}, {"time": 1.25}, {"time": 3.0}]
+	var g: PackedFloat32Array = PianoRules.half_gaps(sample)
+	_check(is_equal_approx(g[0], 0.5) and is_equal_approx(g[1], 0.125) and is_equal_approx(g[2], 0.125) and is_equal_approx(g[3], 0.875), "판정 간격은 가까운 옆 표 간격의 절반")
 	_check(not PianoRules.should_stamp({"anti": true, "watcher": true}), "감시자 박자는 찍으면 안 됨")
 	_check(not PianoRules.should_stamp({"anti": false, "watcher": false}), "민초 표는 찍으면 안 됨")
 	_check(PianoRules.should_stamp({"anti": true, "watcher": false}), "반민초 표는 찍어야 함")

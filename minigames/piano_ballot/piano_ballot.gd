@@ -1,6 +1,7 @@
 extends Node3D
-## 피아노표(id: piano_ballot). 컨베이어로 일정한 박자로 오는 표 중 반민초 표(빈 흰 종이)만 박자에 맞춰 찍는다. 민초 표는 민트 도장이 미리 찍혀 있다.
-## 감시자는 한 박자 전에 소리와 화면으로 예고하며, 그 박자에 찍으면 적발. 클릭 = 찍기.
+## 피아노표(id: piano_ballot). 컨베이어로 리듬에 맞춰 오는 표 중 반민초 표(빈 흰 종이)만 박자에 맞춰 찍는다. 민초 표는 민트 도장이 미리 찍혀 있다.
+## 표는 고리처럼 돈다: 뒤쪽 미리보기 레일을 왼쪽으로 흐르다가 왼쪽 끝에서 앞 레일로 넘어와 찍는 자리로 온다. 미리보기 레일에서 리듬을 미리 본다.
+## 감시자는 한 박자 전에 소리와 화면으로 예고하며, 그 표를 찍으면 적발. 클릭 = 찍기.
 
 enum State { TUTORIAL, PLAYING, ENDED }
 
@@ -10,19 +11,26 @@ const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const CONVEYOR: PackedScene = preload("res://minigames/piano_ballot/props/conveyor.tscn")
 const STAMP: PackedScene = preload("res://minigames/piano_ballot/props/stamp.tscn")
 const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
-const SPACING: float = 2.0 # 박자당 표 사이 거리
+const SPACING: float = 3.0 # 한 박 동안 표가 가는 거리. 16분(0.25박) 간격 0.75가 표 폭보다 넓게
+const BALLOT_SIZE: Vector3 = Vector3(0.66, 0.06, 1.0) # 흐르는 방향(x)으로 좁은 쪽지
+const BELT_END: float = Conveyor.LENGTH / 2.0 # 레일 끝. 여기서 미리보기 레일 → 앞 레일로 넘어온다
+const PREVIEW_Z: float = -2.6 # 미리보기 레일(뒤쪽, 반대 방향)
+const WATCH_SHOW: float = 0.4 # 감시자 표 앞뒤로 감시자가 서 있는 시간(박)
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
-const TUTORIAL_TEXT: String = "표가 일정한 박자로 컨베이어를 타고 옵니다. 중앙의 찍는 틀에 닿는 박자에 맞춰 클릭하세요.\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 바로 다음 박자에는 아무것도 찍으면 안 됩니다.\n감시자 앞에서 찍으면 바로 들킵니다!"
+const TUTORIAL_TEXT: String = "표가 리듬에 맞춰 컨베이어를 타고 옵니다. 중앙의 찍는 틀에 닿는 순간 클릭하세요.\n빈 표(반민초)만 찍습니다. 민트 도장이 찍힌 표(민초)는 그냥 보내세요.\n뒤쪽 레일에 곧 올 표가 반대로 먼저 지나갑니다. 리듬을 미리 보세요!\n'감시자 등장!'이 뜨고 낮은 소리가 나면, 한 박자 뒤 그 표는 찍으면 안 됩니다. 감시자 앞에서 찍으면 바로 들킵니다!"
 
 @export var id: StringName = &"piano_ballot"
 
 var _state: State = State.TUTORIAL
-var _beats: Array[Dictionary] = []
+var _beats: Array[Dictionary] = [] # 표 목록(시간순). PianoRules.build 참고
+var _windows: PackedFloat32Array = PackedFloat32Array() # 표마다 판정 허용 오차(초)
+var _watch_list: Array[int] = [] # 감시자 표 번호(시간순)
+var _next_warn: int = 0
 var _resolved: Array[bool] = []
 var _ballots: Array[MeshInstance3D] = []
 var _beat_dur: float
-var _first: float # 첫 표가 찍는 지점에 닿는 시각
+var _first: float # 0박(첫 마디 첫 박)이 찍는 지점에 닿는 시각
 var _t: float = 0.0
 var _next_resolve: int = 0
 var _mistakes: int = 0
@@ -30,7 +38,7 @@ var _warn_until: float = -1.0
 var _sfx: AudioStreamPlayer
 var _stamper: Node3D
 var _watcher: Watcher
-var _conveyor: Conveyor
+var _conveyors: Array[Conveyor] = []
 var _stamp_tween: Tween
 
 @onready var _camera: Camera3D = $Camera3D
@@ -40,7 +48,7 @@ var _stamp_tween: Tween
 
 func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
-	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, 0.0)) # 약 30도. 컨베이어 옆면(롤러)이 보이게
+	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, -0.8)) # 약 30도. 컨베이어 옆면(롤러)과 뒤 미리보기 레일이 보이게
 	_beat_dur = 60.0 / CONFIG.bpm
 	_first = CONFIG.count_in * _beat_dur
 	_sfx = AudioStreamPlayer.new()
@@ -53,18 +61,23 @@ func _start() -> void:
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
 	_beats = PianoRules.build(CONFIG, rng)
+	for g in PianoRules.half_gaps(_beats):
+		_windows.append(minf(CONFIG.window, g * _beat_dur))
 	_resolved.resize(_beats.size())
 	_resolved.fill(false)
-	for beat in _beats:
-		var b: MeshInstance3D = _box(Vector3(1.4, 0.06, 1.0), PALETTE.paper)
+	for i in _beats.size():
+		var beat: Dictionary = _beats[i]
+		if beat["watcher"]:
+			_watch_list.append(i)
+		var b: MeshInstance3D = _box(BALLOT_SIZE, PALETTE.paper)
 		if not beat["anti"]: # 민초 표: 민트 도장이 손으로 찍은 듯 조금씩 다른 자리·각도로
 			var vote: Node3D = STAMP_MARK.instantiate()
 			vote.ink = PALETTE.mincho.darkened(0.2) # 흰 종이 위에서 잘 보이게
-			vote.scale = Vector3.ONE * 1.3
-			vote.position = Vector3(randf_range(-0.3, 0.3), 0.035, randf_range(-0.15, 0.15))
+			vote.scale = Vector3.ONE * 1.0
+			vote.position = Vector3(randf_range(-0.04, 0.04), 0.035, randf_range(-0.2, 0.2))
 			vote.rotation.y = randf_range(-0.4, 0.4)
 			b.add_child(vote)
-		b.position = Vector3(-100.0, 0.1, 0.0)
+		b.visible = false
 		add_child(b)
 		_ballots.append(b)
 	_refresh()
@@ -76,23 +89,42 @@ func _process(delta: float) -> void:
 		return
 	var prev: float = _t
 	_t += delta
-	var k: int = floori(_t / _beat_dur)
-	if k > floori(prev / _beat_dur):
-		_tick(k - CONFIG.count_in)
+	var now: float = (_t - _first) / _beat_dur # 지금이 몇 박째인가 (0박이 찍는 지점에 닿는 순간 = 0)
+	if floori(now) > floori((prev - _first) / _beat_dur):
+		Beep.play(_sfx, 880.0) # 메트로놈: 4분음표마다
+	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - 1.0:
+		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + 0.5) * _beat_dur
+		Beep.play(_sfx, 330.0)
+		_next_warn += 1
+	var watcher_here: bool = false
 	for i in _ballots.size():
-		_ballots[i].position.x = (_t - _first - i * _beat_dur) / _beat_dur * SPACING
-	_conveyor.scroll(_t / _beat_dur * SPACING) # 표와 같은 속도
-	var idx: int = roundi((_t - _first) / _beat_dur)
-	_watcher.set_present(idx >= 0 and idx < _beats.size() and _beats[idx]["watcher"])
+		var u: float = now - _beats[i]["time"] # 찍는 지점까지 남은(음수)·지난(양수) 박
+		_place_ballot(_ballots[i], u * SPACING)
+		if _beats[i]["watcher"] and absf(u) < WATCH_SHOW:
+			watcher_here = true
+	for c in _conveyors:
+		c.scroll(_t / _beat_dur * SPACING) # 표와 같은 속도
+	_watcher.set_present(watcher_here)
 	_warn.visible = _t < _warn_until
 	# 판정 창이 지난 표는 안 찍은 것으로 확정한다
-	while _next_resolve < _beats.size() and _t > _first + _next_resolve * _beat_dur + CONFIG.window:
+	while _next_resolve < _beats.size() and _t > _first + _beats[_next_resolve]["time"] * _beat_dur + _windows[_next_resolve]:
 		if not _resolved[_next_resolve] and PianoRules.should_stamp(_beats[_next_resolve]):
 			_mistake("놓쳤다!")
 		_resolved[_next_resolve] = true
 		_next_resolve += 1
 	if _next_resolve >= _beats.size():
 		_finish(false, "")
+
+
+# 고리 위치. d = 앞 레일에서 찍는 지점 기준 x. 앞 레일 왼쪽 끝보다 이전이면 미리보기 레일 위(반대 방향)
+func _place_ballot(b: MeshInstance3D, d: float) -> void:
+	if d >= -BELT_END:
+		b.position = Vector3(d, 0.1, 0.0)
+		b.visible = d <= BELT_END
+	else:
+		var x: float = -2.0 * BELT_END - d # 왼쪽 끝(-BELT_END)에서 앞 레일과 이어진다
+		b.position = Vector3(x, 0.1, PREVIEW_Z)
+		b.visible = x <= BELT_END
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -102,8 +134,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if mb.button_index != MOUSE_BUTTON_LEFT or not mb.pressed:
 		return
 	_press_stamper()
-	var i: int = roundi((_t - _first) / _beat_dur)
-	if i < 0 or i >= _beats.size() or _resolved[i] or absf(_t - _first - i * _beat_dur) > CONFIG.window:
+	var i: int = _nearest_open()
+	if i < 0:
 		return # 박자에서 벗어난 클릭은 아무것도 찍지 못한다
 	_resolved[i] = true
 	var mark: Node3D = STAMP_MARK.instantiate()
@@ -115,13 +147,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		_mistake("민초 표를 찍었다!")
 
 
-# b = 박자 번호(카운트인 동안은 음수). 다음 박자에 감시자가 오면 예고한다
-func _tick(b: int) -> void:
-	if b + 1 >= 0 and b + 1 < _beats.size() and _beats[b + 1]["watcher"]:
-		_warn_until = _first + (b + 1) * _beat_dur + _beat_dur * 0.5
-		Beep.play(_sfx, 330.0)
-	else:
-		Beep.play(_sfx, 880.0)
+# 판정 창 안에 있는 아직 안 찍은 표. 창은 옆 표와 겹치지 않으므로 많아야 하나
+func _nearest_open() -> int:
+	for i in range(_next_resolve, _beats.size()):
+		var off: float = _t - _first - _beats[i]["time"] * _beat_dur
+		if off < -CONFIG.window:
+			break
+		if not _resolved[i] and absf(off) <= _windows[i]:
+			return i
+	return -1
 
 
 func _mistake(msg: String) -> void:
@@ -187,11 +221,16 @@ func _build_visuals() -> void:
 	we.environment = env
 	add_child(we)
 
-	_conveyor = CONVEYOR.instantiate()
-	add_child(_conveyor)
+	var main_belt: Conveyor = CONVEYOR.instantiate()
+	add_child(main_belt)
+	var preview_belt: Conveyor = CONVEYOR.instantiate() # 반 바퀴 돌려 놓아 -x로 흐른다
+	preview_belt.position.z = PREVIEW_Z
+	preview_belt.rotation.y = PI
+	add_child(preview_belt)
+	_conveyors = [main_belt, preview_belt]
 
 	# 찍는 지점 표시 틀
-	var frame: MeshInstance3D = _box(Vector3(1.8, 0.02, 1.4), PALETTE.accent)
+	var frame: MeshInstance3D = _box(Vector3(BALLOT_SIZE.x + 0.3, 0.02, 1.4), PALETTE.accent)
 	frame.position.y = 0.06
 	add_child(frame)
 
@@ -200,5 +239,5 @@ func _build_visuals() -> void:
 	add_child(_stamper)
 
 	_watcher = WATCHER.instantiate()
-	_watcher.position = Vector3(-3.0, 0.0, -2.5)
+	_watcher.position = Vector3(-3.0, 0.0, PREVIEW_Z - 2.0) # 미리보기 레일 너머에서 찍는 자리를 본다
 	add_child(_watcher)
