@@ -11,7 +11,7 @@ const DEPTH: float = 1.6
 const DESK_Z: float = 0.75
 const FLOOR_Y: float = TOP_Y - 1.2 # 바닥 = 주인공 발. 책상 높이 1.2 : 주인공 키 약 3 (실제 책상 비율)
 const DESK_W: float = 18.6 # 양 끝 다리가 화면(폭 약 19.2) 안에 보이게
-const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
+const PROTAGONIST: PackedScene = preload("res://common/protagonist.tscn")
 const HERO_SCALE: float = 1.8
 ## 주인공의 작전 행동. xs = 설 수 있는 위치(x) 후보, face = 바라보는 방향(0 = 화면, PI = 보드),
 ## lift = 의자 위에 올라선 높이, prop = 손에 드는 소품, hide = 손에 들면 책상에서 숨길 소품, desk = 책상에 펼칠 소품

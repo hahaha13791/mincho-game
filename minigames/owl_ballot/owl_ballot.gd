@@ -7,6 +7,7 @@ enum State { TUTORIAL, LIGHT, DARK, ENDED }
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: OwlConfig = preload("res://minigames/owl_ballot/owl_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
+const PROTAGONIST: PackedScene = preload("res://common/protagonist.tscn")
 const BALLOT_BOX: PackedScene = preload("res://minigames/owl_ballot/props/ballot_box.tscn")
 const CELL: float = 1.2
 ## 엄폐물 겉모습 서브씬. 기준 칸이 원점, 회전 전 모양은 +x(열)·+z(행) 방향으로 뻗는다
@@ -32,7 +33,7 @@ var _step_acc: float = 0.0
 var _done: Array[bool] = []
 var _near_missed: bool = false
 var _env: Environment
-var _pawn: MeshInstance3D
+var _pawn: Protagonist # 플레이어: 최종 단계 복장(중절모·초콜릿 코트) 주인공
 var _box_meshes: Array[OwlBallotBox] = []
 var _vision_tiles: Dictionary = {} # Vector2i -> MeshInstance3D
 var _watchers: Array[Watcher] = []
@@ -78,6 +79,7 @@ func _process(delta: float) -> void:
 			_cycle += 1
 			_enter_light(CONFIG.light_time, false)
 	_pawn.position = _pawn.position.move_toward(_pawn_pos(_cell), CELL / CONFIG.step_time * 1.5 * delta)
+	_pawn.set_walking(not _pawn.position.is_equal_approx(_pawn_pos(_cell)))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -179,6 +181,7 @@ func _move(delta: float) -> void:
 		else:
 			_moving = false
 			break
+		_pawn.rotation.y = _facing(d) # 가려는 쪽을 본다(막혀도 그쪽을 보고 멈춘다)
 		var next: Vector2i = _cell + d
 		if OwlRules.is_wall(OwlLevel.map(), next):
 			_moving = false
@@ -214,7 +217,7 @@ func _world(c: Vector2i) -> Vector3:
 
 
 func _pawn_pos(c: Vector2i) -> Vector3:
-	return _world(c) + Vector3(0.0, 0.45, 0.0)
+	return _world(c) # 인형 원점이 발
 
 
 # --- 화면 ---
@@ -284,6 +287,7 @@ func _build_visuals() -> void:
 		_props.add_child(inst)
 		_watchers.append(inst)
 
-	_pawn = _box(Vector3(CELL * 0.5, 0.9, CELL * 0.5), PALETTE.mincho)
-	_pawn.position = _world(OwlLevel.START) + Vector3(0.0, 0.45, 0.0)
+	_pawn = PROTAGONIST.instantiate()
 	add_child(_pawn)
+	_pawn.set_stage(GameState.MINIGAME_COUNT)
+	_pawn.position = _pawn_pos(OwlLevel.START)

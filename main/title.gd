@@ -4,7 +4,7 @@ extends Control
 ## 아지트 조명은 작전본부실 덮개(hub/hub_light.gdshader)를 스탠드 없이 원서 위 조명만 켜서 쓴다.
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
-const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
+const PROTAGONIST: PackedScene = preload("res://common/protagonist.tscn")
 const LIGHT_SHADER: Shader = preload("res://main/hub/hub_light.gdshader")
 const FORM_SIZE: Vector2 = Vector2(900, 860)
 const FORM_CENTER: Vector2 = Vector2(960, 590)

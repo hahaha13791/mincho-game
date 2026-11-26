@@ -1,6 +1,6 @@
 class_name Protagonist
 extends Node3D
-## 작전본부실의 주인공(민초단원). 겉모습은 이 서브씬에만 있다. 로직은 set_stage()와 act()만 쓴다.
+## 주인공(민초단원). 작전본부실·타이틀·암흑 침투가 같이 쓴다. 겉모습은 이 서브씬에만 있다. 로직은 set_stage()·act()·set_walking()만 쓴다.
 ## 끝낸 작전 수에 따라 복장이 바뀐다:
 ##   0~1개 민트 셔츠 / 2~3개 셔츠 대신 머리띠 / 4~5개 머리띠+완장 / 6개 중절모+깃 세운 초콜릿 코트(민트 배지)만
 ## 행동 애니메이션은 assets/figure/figure.glb의 think, point, coffee, map, phone, pin, magnifier, write.
@@ -10,6 +10,7 @@ const HAND_BONE: String = "forearm.R"
 const HAND_OFFSET: float = 0.31 # 팔꿈치에서 손까지(뼈 길이)
 
 @onready var _figure: Node3D = $Figure
+var _walking: bool = false
 
 
 func _ready() -> void:
@@ -29,6 +30,13 @@ func set_stage(done: int) -> void:
 	else:
 		outfit["Shirt"] = PALETTE.mincho
 	FigureLook.dress(_figure, outfit)
+
+
+## 걷기/서 있기 전환(Watcher.set_walking과 같음). 이동과 방향은 쓰는 쪽이 position·rotation으로 한다
+func set_walking(on: bool) -> void:
+	if on != _walking:
+		_walking = on
+		FigureLook.play(_figure, "walk" if on else "idle")
 
 
 ## 행동 애니메이션을 반복하고 오른손에 소품을 든다(prop이 비면 빈손)
