@@ -8,16 +8,6 @@ const DESK: PackedScene = preload("res://main/hub/desk.tscn")
 const LIGHT_SHADER: Shader = preload("res://main/hub/hub_light.gdshader")
 const BOARD_SCALE: float = 0.85 # 주인공이 잘 보이게 보드를 줄인다
 const PINS: Array[String] = ["danger", "accent", "ballot_box", "mincho"] # 팔레트 이름. 메모마다 돌려 쓴다
-# 테스트용 채우기 프리셋(이름 -> 등급 목록). 목록은 순서대로 미니게임에 배정되고 모자라면 마지막 값을 쓴다
-const FILL_PRESETS: Dictionary = {
-	"전부 완전범죄": [Grade.Rank.PERFECT],
-	"전부 미션성공": [Grade.Rank.SUCCESS],
-	"미션성공 5 + 적발 1": [Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.CAUGHT],
-	"완전범죄 4 + 적발 2": [Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.CAUGHT, Grade.Rank.CAUGHT],
-	"전부 적발": [Grade.Rank.CAUGHT],
-	"무작위": [],
-}
-
 var _memos: Dictionary = {} # id -> MemoCard
 var _decor: Array[MemoCard] = []
 var _center: MemoCard
@@ -32,7 +22,6 @@ func _ready() -> void:
 	add_child(wall)
 	_build_board()
 	_build_desk()
-	_build_tools()
 
 
 func _process(_delta: float) -> void:
@@ -216,7 +205,7 @@ func _build_desk() -> void:
 
 
 # 비밀 장소 조명: 화면 전체에 어둠을 깔고 천장 조명·책상 스탠드 빛만 남기는 덮개(hub/hub_light.gdshader)
-# 보드·책상을 덮는다. 리더보드·테스트 버튼은 어둠 속에서도 읽히게 그 위
+# 보드·책상을 덮는다. 리더보드 버튼은 어둠 속에서도 읽히게 그 위
 func _build_light(desk: HubDesk) -> void:
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = LIGHT_SHADER
@@ -230,41 +219,3 @@ func _build_light(desk: HubDesk) -> void:
 	cover.set_anchors_preset(Control.PRESET_FULL_RECT)
 	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cover)
-
-
-# shortcut: 테스트용 버튼들. 전시 전에 숨긴다
-func _build_tools() -> void:
-	var tools: HBoxContainer = HBoxContainer.new()
-	tools.add_theme_constant_override("separation", 8)
-	tools.position = Vector2(1000, 1010)
-	tools.modulate.a = 0.6
-	add_child(tools)
-	var reset: Button = Button.new()
-	reset.text = "처음부터 (테스트)"
-	reset.pressed.connect(func() -> void:
-		GameState.reset()
-		get_tree().reload_current_scene())
-	tools.add_child(reset)
-	var preset: OptionButton = OptionButton.new()
-	for p in FILL_PRESETS:
-		preset.add_item(p)
-	tools.add_child(preset)
-	var fill: Button = Button.new()
-	fill.text = "전부 완료 (테스트)"
-	fill.pressed.connect(func() -> void:
-		_fill_all(preset.selected)
-		get_tree().reload_current_scene())
-	tools.add_child(fill)
-
-
-# shortcut: 테스트용. 득표와 등급을 초기화한 뒤 씬이 있는 미니게임을 프리셋대로 채운다
-func _fill_all(preset: int) -> void:
-	GameState.reset()
-	var ranks: Array = FILL_PRESETS.values()[preset]
-	var i: int = 0
-	for entry in LIST.entries:
-		if entry.scene.is_empty():
-			continue
-		var rank: Grade.Rank = Grade.Rank.values().pick_random() if ranks.is_empty() else ranks[mini(i, ranks.size() - 1)]
-		GameState.submit_result(entry.id, rank)
-		i += 1

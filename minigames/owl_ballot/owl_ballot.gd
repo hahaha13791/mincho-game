@@ -33,7 +33,7 @@ var _step_acc: float = 0.0
 var _done: Array[bool] = []
 var _near_missed: bool = false
 var _env: Environment
-var _pawn: Protagonist # 플레이어: 최종 단계 복장(중절모·초콜릿 코트) 주인공
+var _pawn: Protagonist # 플레이어: 민트 셔츠 주인공(어두운 맵에서도 보이게)
 var _box_meshes: Array[OwlBallotBox] = []
 var _vision_tiles: Dictionary = {} # Vector2i -> MeshInstance3D
 var _watchers: Array[Watcher] = []
@@ -289,5 +289,5 @@ func _build_visuals() -> void:
 
 	_pawn = PROTAGONIST.instantiate()
 	add_child(_pawn)
-	_pawn.set_stage(GameState.MINIGAME_COUNT)
+	_pawn.set_stage(0) # 0단계 복장 = 민트 셔츠
 	_pawn.position = _pawn_pos(OwlLevel.START)
