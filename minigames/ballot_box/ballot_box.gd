@@ -29,6 +29,7 @@ const SHAPES: Array = [
 	[Rect2(-0.75, -0.5, 1.5, 1.0)],
 	[Rect2(-0.75, -0.25, 1.5, 0.5), Rect2(-0.75, -0.25, 0.5, 1.25)],
 ]
+const PILE_ROW: float = 0.45 # 바닥 더미 줄 간격
 const THUMPS: int = 3 # 도착 예고 발소리 수. 하나씩 늘어난다
 const THUMP_GAP: float = 0.8 # 발소리 간격. 마지막 쿵 → 도착 = warn_lead - (THUMPS - 1) × 이 값
 const INTRO_TEXT: String = "투표가 시작되기 전에 투표함에 민초 표를 미리 넣어 둔다. 개표하면 투표한 사람보다 민초 표가 더 많이 나올 것이다." # 튜토리얼 위 칸: 어떤 수법인지
@@ -38,6 +39,8 @@ const TUTORIAL_TEXT: String = "접힌 민초 표를 끌어다 투표함에 떨�
 @export var perfect_papers: int = 12 # 이 장수 이상 + 여유 있게 닫으면 완전범죄
 @export var success_papers: int = 10 # 이 장수 미만이면 적발
 @export var initial_papers: int = 2 # 시작 때 상자 안에 들어 있는 표
+@export var pile_height: float = 0.7 # 두 줄. 1.2면 12장이 면적상 거의 안 들어간다. 바닥에 깔린 표 더미 높이. 높을수록 남는 자리가 줄어 어렵다. 장수에는 안 들어간다
+@export var pile_seed: int = 7 # 더미 모양. 매판 같은 모양이라 난이도가 흔들리지 않는다
 @export var visit_count: int = 3
 @export var first_visit: float = 8.0 # 첫 도착 시각(초)
 @export var visit_gap: float = 8.0 # 방문 간격
@@ -72,8 +75,9 @@ func _ready() -> void:
 	_sfx = AudioStreamPlayer.new()
 	add_child(_sfx)
 	_build_visuals()
-	for i in initial_papers: # 상자 안에 미리 들어 있는 표. 시작 전에 물리로 자리잡는다
-		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + 1.0 + i * 1.6, 0.0))
+	_build_pile()
+	for i in initial_papers: # 상자 안에 미리 들어 있는 표. 시작 전에 물리로 자리잡는다(더미 위에 떨어진다)
+		var p: BallotPaper = _make_paper(Vector3(BOX_CENTER_X + (i % 2 - 0.5) * 2.0, FLOOR_Y + pile_height + 1.2 + i * 1.6, 0.0))
 		p.set_waiting(false)
 	$HUD/CloseButton.pressed.connect(_on_close_pressed)
 	Tutorial.open(self, INTRO_TEXT, TUTORIAL_TEXT, _start)
@@ -240,6 +244,42 @@ func _make_paper(pos: Vector3) -> BallotPaper:
 	add_child(p)
 	_papers.append(p)
 	return p
+
+
+# 바닥 표 더미: 고정된 표를 줄줄이 겹쳐 깐다. 맨 윗줄은 많이 기울여 모서리가 삐죽 튀어나오게(위에 쌓기 어렵게).
+# _papers에 넣지 않아 집을 수도, 장수에 셀 수도 없다. 조금 어두운 종이라 새로 넣은 표와 구별된다
+func _build_pile() -> void:
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = pile_seed
+	var left: float = BOX_CENTER_X - BOX_W / 2.0
+	var right: float = BOX_CENTER_X + BOX_W / 2.0
+	var y: float = FLOOR_Y + 0.25
+	while y <= FLOOR_Y + pile_height:
+		var top_row: bool = y + PILE_ROW > FLOOR_Y + pile_height
+		var tilt: float = 0.9 if top_row else 0.4
+		if y < FLOOR_Y + PILE_ROW: # 맨 아랫줄은 바닥을 뚫지 않게 거의 눕힌다
+			tilt = 0.15
+		var x: float = left
+		while x < right:
+			var p: BallotPaper = BallotPaper.new()
+			var shape: Array = SHAPES[rng.randi() % SHAPES.size()]
+			p.setup(shape, PALETTE.paper.darkened(0.12), PALETTE.mincho, false)
+			p.freeze = true
+			p.rotation.z = rng.randf_range(-tilt, tilt)
+			var half: float = _half_width(shape, p.rotation.z)
+			p.position = Vector3(clampf(x + half, left + half, right - half), y + rng.randf_range(-0.1, 0.1), 0.0)
+			add_child(p)
+			x += half * 2.0 * rng.randf_range(0.6, 0.9) # 조금씩 겹쳐 빈틈 없이
+		y += PILE_ROW
+
+
+# shape를 angle만큼 돌렸을 때 중심에서 좌우 끝까지 거리(벽 밖으로 삐져나가지 않게)
+func _half_width(shape: Array, angle: float) -> float:
+	var half: float = 0.0
+	for r: Rect2 in shape:
+		for c: Vector2 in [r.position, r.end, Vector2(r.position.x, r.end.y), Vector2(r.end.x, r.position.y)]:
+			half = maxf(half, absf(c.rotated(angle).x))
+	return half
 
 
 func _spawn_tray_paper() -> void:
