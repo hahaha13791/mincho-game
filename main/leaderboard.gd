@@ -35,6 +35,8 @@ func _ready() -> void:
 
 	var back: Button = Button.new()
 	back.text = "돌아가기"
+	back.custom_minimum_size = Vector2(300, 80)
+	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back.pressed.connect(func() -> void:
 		# 방금 등록하고 온 사람은 다음 방문자를 위해 타이틀로, 허브에서 보러 온 사람은 허브로
 		var registered: bool = Leaderboard.highlight_id != -1

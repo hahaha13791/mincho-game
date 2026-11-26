@@ -182,7 +182,7 @@ func _finish() -> void:
 
 
 func _refresh() -> void:
-	$HUD/ProgressLabel.text = "웨이브 %d / %d   %d / %d명  실수 %d" % [_wave + 1, CONFIG.wave_counts.size(), _spawned, _total, _wrong]
+	$HUD/ProgressLabel.text = "웨이브 %d / %d   ·   %d / %d명   ·   실수 %d" % [_wave + 1, CONFIG.wave_counts.size(), _spawned, _total, _wrong]
 
 
 # --- 화면 ---
@@ -219,7 +219,9 @@ func _place(size: Vector3, pos: Vector3, color: Color, text: String) -> void:
 	var width: float = _label_font(label).get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, label.font_size).x * label.pixel_size
 	if width > size.x - 0.3: # 건물 폭 밖으로 나가지 않게 줄인다
 		label.font_size = int(label.font_size * (size.x - 0.3) / width)
-	label.position = Vector3(pos.x, size.y + 0.8, pos.z)
+	label.modulate = PALETTE.stamp # 흰 글씨+검은 외곽선은 베이지 땅에서 속 빈 글씨처럼 보인다
+	label.outline_size = 0
+	label.position = Vector3(pos.x, size.y + 1.2, pos.z - 1.8) # 건물 뒤쪽 위. 지붕 모서리에 걸치지 않게
 	add_child(label)
 
 
@@ -291,6 +293,8 @@ func _build_visuals() -> void:
 	shop_label.text = "민트초코\n아이스크림"
 	shop_label.font_size = 72
 	shop_label.pixel_size = 0.01
+	shop_label.modulate = PALETTE.stamp
+	shop_label.outline_size = 0
 	shop_label.position = Vector3(shop_x, 4.6, JUNCTION_Z - 1.5) # 콘 뒤쪽 위. 위에서 보는 카메라라 콘과 겹치지 않게
 	add_child(shop_label)
 

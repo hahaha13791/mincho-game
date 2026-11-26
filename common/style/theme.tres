@@ -6,6 +6,7 @@
 
 [resource]
 default_font_size = 28
+Label/colors/font_color = Color(0.17, 0.15, 0.14, 1)
 HandLabel/base_type = &"Label"
 HandLabel/colors/font_color = Color(0.17, 0.15, 0.14, 1)
 HandLabel/font_sizes/font_size = 46

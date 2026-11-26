@@ -55,6 +55,8 @@ func _ready() -> void:
 	again.pressed.connect(func() -> void:
 		GameState.reset()
 		Flow.go_title())
+	register.custom_minimum_size = Vector2(360, 80)
+	again.custom_minimum_size = Vector2(360, 80)
 	buttons.add_child(register)
 	buttons.add_child(again)
 	box.add_child(_hidden(buttons))
