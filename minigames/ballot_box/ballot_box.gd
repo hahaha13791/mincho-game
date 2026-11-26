@@ -5,7 +5,6 @@ extends Node3D
 enum State { TUTORIAL, PLAYING, ENDED }
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
-const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const BOX_CENTER_X: float = -2.0
 const BOX_W: float = 6.0 # 안쪽 폭
 const BOX_H: float = 4.0 # 안쪽 높이. 윗면이 선(뚜껑 높이)
@@ -17,9 +16,9 @@ const TRAY_POS: Vector3 = Vector3(5.0, 0.0, 0.0)
 const LID_T: float = 0.4
 const LID_CLOSED_POS: Vector3 = Vector3(BOX_CENTER_X, LINE_Y + LID_T / 2.0, 0.0) # 벽 윗면에 얹힘
 const LID_OPEN_POS: Vector3 = Vector3(BOX_CENTER_X, LINE_Y + 2.5, -BOX_D) # 뒤로 치워 안쪽을 안 가림
-const LEAVE_TIME: float = 0.5 # 관리인이 돌아가는 시간
-const OBSERVER_FROM_X: float = -10.0
-const OBSERVER_TO_X: float = -6.8
+const LEAVE_TIME: float = 0.5 # 참관인이 화면 밖으로 빠지는 시간
+const PEEK_AFTER: float = 0.4 # 마지막 쿵 뒤 이만큼 있다가 참관인이 머리를 내민다
+const RISE_TIME: float = 0.25 # 머리만 → 다 들어오는 시간. 도착 순간에 다 들어와 있다
 const KILL_Y: float = -8.0
 const GRAB_GAIN: float = 25.0 # 집은 표가 마우스를 따라오는 속도 (거리 × 이 값)
 const MAX_GRAB_SPEED: float = 30.0
@@ -59,7 +58,8 @@ var _closed_at: float = 0.0
 var _min_margin: float = INF
 var _lid_tween: Tween
 var _lid: MeshInstance3D
-var _observer: Watcher # 참관인은 공용 감시자 모습을 쓴다
+var _observer: PeekWatcher # 참관인: 화면 가장자리에서 들이미는 감시자 상반신(피아노표와 같은 방식)
+var _entry_visit: int = 0 # 등장 방향을 마지막으로 정한 방문 번호
 var _thump_key: int = -1 # 마지막으로 소리 낸 (방문 번호, 발소리 번호). 같은 쿵을 두 번 울리지 않게
 var _sfx: AudioStreamPlayer
 
@@ -96,27 +96,41 @@ func _process(delta: float) -> void:
 		_finish()
 
 
-# 모든 방문 시각에 대해 관리인 위치와 발소리 표시를 갱신한다
+# 모든 방문 시각에 대해 발소리 표시와 참관인 등장을 갱신한다
 func _move_observer() -> void:
-	var x: float = OBSERVER_FROM_X
+	var rise: float = 0.0
 	var warning: bool = false
 	for vi in _visits.size():
-		var t: float = _elapsed - (_visits[vi] - warn_lead)
-		if t >= 0.0 and t < warn_lead + stay + LEAVE_TIME:
-			x = lerpf(OBSERVER_FROM_X, OBSERVER_TO_X, clampf(t / warn_lead, 0.0, 1.0) - clampf((t - warn_lead - stay) / LEAVE_TIME, 0.0, 1.0))
-			warning = t < warn_lead
-			if warning: # 쿵 → 쿵 쿵 → 쿵 쿵 쿵. 마지막 쿵 뒤 조금 쉬고 도착
-				var n: int = mini(floori(t / THUMP_GAP) + 1, THUMPS)
-				$HUD/AlertLabel.text = "쿵…  ".repeat(n).strip_edges()
-				if vi * 10 + n != _thump_key:
-					_thump_key = vi * 10 + n
-					Beep.play(_sfx, 70.0, 0.25)
-	var dx: float = x - _observer.position.x
-	_observer.set_walking(absf(dx) > 0.0001)
-	if absf(dx) > 0.0001:
-		_observer.face(Vector2i(1 if dx > 0.0 else -1, 0))
-	_observer.position.x = x
+		var t: float = _elapsed - (_visits[vi] - warn_lead) # 첫 쿵부터 지난 시간. warn_lead에 도착
+		if t < 0.0 or t >= warn_lead + stay + LEAVE_TIME:
+			continue
+		if vi != _entry_visit: # 방문마다 다른 방향에서 들이민다
+			_entry_visit = vi
+			_observer.next_entry()
+		rise = _observer_rise(t)
+		warning = t < warn_lead
+		if warning: # 쿵 → 쿵 쿵 → 쿵 쿵 쿵. 마지막 쿵 뒤 조금 쉬고 도착
+			var n: int = mini(floori(t / THUMP_GAP) + 1, THUMPS)
+			$HUD/AlertLabel.text = "쿵…  ".repeat(n).strip_edges()
+			if vi * 10 + n != _thump_key:
+				_thump_key = vi * 10 + n
+				Beep.play(_sfx, 70.0, 0.25)
+	_observer.set_rise(rise)
 	$HUD/AlertLabel.visible = warning
+
+
+# t = 첫 쿵부터 지난 시간. 쿵이 다 울린 뒤 머리를 내밀고, 도착(warn_lead) 순간 다 들어와 머물다 빠진다
+func _observer_rise(t: float) -> float:
+	var peek_at: float = (THUMPS - 1) * THUMP_GAP + PEEK_AFTER
+	if t < peek_at:
+		return 0.0
+	if t < warn_lead - RISE_TIME:
+		return PeekWatcher.PEEK * clampf((t - peek_at) / RISE_TIME, 0.0, 1.0)
+	if t < warn_lead:
+		return lerpf(PeekWatcher.PEEK, 1.0, (t - (warn_lead - RISE_TIME)) / RISE_TIME)
+	if t < warn_lead + stay:
+		return 1.0
+	return 1.0 - clampf((t - warn_lead - stay) / LEAVE_TIME, 0.0, 1.0)
 
 
 func _is_visiting() -> bool:
@@ -358,8 +372,5 @@ func _build_visuals() -> void:
 	slot.position.y = LID_T / 2.0
 	_lid.add_child(slot)
 
-	_observer = WATCHER.instantiate()
-	_observer.position = Vector3(OBSERVER_FROM_X, -1.0, 0.0) # 발 높이 = 예전 상자 밑면
-	add_child(_observer)
-	_observer.set_present(true)
-	_observer.face(Vector2i(1, 0)) # 투표함 쪽
+	_observer = PeekWatcher.new() # 카메라 자식: 화면 가장자리에서 상반신을 들이민다
+	_camera.add_child(_observer)

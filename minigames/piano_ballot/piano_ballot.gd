@@ -8,7 +8,6 @@ enum State { TUTORIAL, PLAYING, ENDED }
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: PianoConfig = preload("res://minigames/piano_ballot/piano_config.tres")
-const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const CONVEYOR: PackedScene = preload("res://minigames/piano_ballot/props/conveyor.tscn")
 const STAMP: PackedScene = preload("res://minigames/piano_ballot/props/stamp.tscn")
 const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
@@ -19,18 +18,6 @@ const CALL_LAG: float = PianoRules.MEASURE # 뒤 레일 가운데를 지난 뒤 
 const PREVIEW_Z: float = -4.5 # 미리보기 레일(뒤쪽, 반대 방향)
 const WATCH_SHOW: float = 0.5 # 감시자 표 앞뒤로 감시자가 다 들어와 있는 시간(박)
 const WATCH_MOVE: float = 0.15 # 감시자가 들어오고 나가는 데 걸리는 박
-# 감시자 상반신: 카메라에 붙인 축(허리)을 화면 가장자리에 두고, 몸이 축의 +y 쪽으로 화면 안에 들어온다. 허리 아래는 늘 화면 밖
-const WATCHER_SCALE: float = 6.7 # 허리 → 머리 끝(크기 1에서 약 1.0)이 화면 세로(10)의 2/3쯤
-const WATCHER_DEPTH: float = -3.0 # 카메라 앞 거리
-const WATCHER_PEEK: float = 0.25 # 예고 동안 들어오는 비율(머리 끝만)
-const WATCHER_TUCK: float = 0.9 # 다 들어와도 허리를 가장자리보다 이만큼 밖에 둔다. 몸이 기울어 엉덩이 모서리가 비치지 않게
-## 등장 방향: edge = 화면 가장자리 위 축 자리(가로·세로 반폭 기준 비율), angle = 축 회전(라디안). 몸 방향 = (-sin, cos)
-const WATCHER_ENTRIES: Array[Dictionary] = [
-	{"edge": Vector2(0.62, -1.0), "angle": 0.3}, # 오른쪽 아래에서 왼쪽 위로
-	{"edge": Vector2(-0.6, 1.0), "angle": PI + 0.45}, # 왼쪽 위에서 오른쪽 아래로(거꾸로 매달려 내려다봄)
-	{"edge": Vector2(1.0, 0.25), "angle": PI / 2.0 + 0.35}, # 오른쪽 옆에서 왼쪽 아래로
-	{"edge": Vector2(-1.0, -0.1), "angle": -PI / 2.0 - 0.3}, # 왼쪽 옆에서 오른쪽 아래로
-]
 const CALL_WORD: String = "탁!" # 보여 주기 소리를 글자로
 const CALL_WORD_POS: Vector3 = Vector3(0.0, 2.6, PREVIEW_Z) # 뒤 레일 가운데 위. 화면에서 도장기 머리보다 위
 const STAMPER_REST_Y: float = 2.5
@@ -57,10 +44,7 @@ var _mistakes: int = 0
 var _warn_until: float = -1.0
 var _sfx: AudioStreamPlayer
 var _stamper: Node3D
-var _watcher: Watcher
-var _watch_rig: Node3D # 감시자 허리 축
-var _watch_torso: float # 허리 → 머리 끝 길이(크기 반영)
-var _entry: Dictionary = WATCHER_ENTRIES[0] # 이번 등장 방향
+var _watcher: PeekWatcher
 var _conveyors: Array[Conveyor] = []
 var _stamp_tween: Tween
 
@@ -128,9 +112,10 @@ func _process(delta: float) -> void:
 	if _next_warn < _watch_list.size() and now >= _beats[_watch_list[_next_warn]]["time"] - CONFIG.warn_beats:
 		_warn_until = _first + (_beats[_watch_list[_next_warn]]["time"] + WATCH_SHOW) * _beat_dur
 		Beep.play(_sfx, 330.0, 0.2)
-		_entry = WATCHER_ENTRIES[_next_warn % WATCHER_ENTRIES.size()] # 나올 때마다 다른 방향
+		if _next_warn > 0:
+			_watcher.next_entry() # 나올 때마다 다른 방향
 		_next_warn += 1
-	var rise: float = 0.0 # 감시자가 들어온 정도: 0 숨음, WATCHER_PEEK 예고, 1 다 들어옴
+	var rise: float = 0.0 # 감시자가 들어온 정도: 0 숨음, PeekWatcher.PEEK 예고, 1 다 들어옴
 	for i in _ballots.size():
 		var u: float = now - _beats[i]["time"] # 찍는 지점까지 남은(음수)·지난(양수) 박
 		_place(_ballots[i], u * SPACING, 0.0)
@@ -139,7 +124,7 @@ func _process(delta: float) -> void:
 			rise = maxf(rise, _watcher_rise(u))
 	for c in _conveyors:
 		c.scroll(_t / _beat_dur * SPACING) # 표와 같은 속도
-	_place_watcher(rise)
+	_watcher.set_rise(rise)
 	_warn.visible = _t < _warn_until
 	# 판정 창이 지난 표는 안 찍은 것으로 확정한다
 	while _next_resolve < _beats.size() and _t > _first + _beats[_next_resolve]["time"] * _beat_dur + _windows[_next_resolve]:
@@ -157,9 +142,9 @@ func _watcher_rise(u: float) -> float:
 	if u < -CONFIG.warn_beats or u > WATCH_SHOW + up:
 		return 0.0
 	if u < -WATCH_SHOW - up:
-		return WATCHER_PEEK * clampf((u + CONFIG.warn_beats) / up, 0.0, 1.0)
+		return PeekWatcher.PEEK * clampf((u + CONFIG.warn_beats) / up, 0.0, 1.0)
 	if u < -WATCH_SHOW:
-		return lerpf(WATCHER_PEEK, 1.0, (u + WATCH_SHOW + up) / up)
+		return lerpf(PeekWatcher.PEEK, 1.0, (u + WATCH_SHOW + up) / up)
 	if u <= WATCH_SHOW:
 		return 1.0
 	return 1.0 - (u - WATCH_SHOW) / up
@@ -190,19 +175,6 @@ func _pop_word(text: String) -> void:
 func _place(b: MeshInstance3D, x: float, z: float) -> void:
 	b.position = Vector3(x, 0.1, z)
 	b.visible = absf(x) <= BELT_END
-
-
-# 허리 축을 실제 화면 가장자리에 둔다. 창 비율이 바뀌어도(stretch aspect = expand) 허리 아래는 늘 화면 밖이다
-func _place_watcher(rise: float) -> void:
-	var half_h: float = _camera.size / 2.0 # 직교 카메라는 세로 크기가 고정(keep_height)
-	var vp: Vector2 = get_viewport().get_visible_rect().size
-	var half_w: float = half_h * vp.x / vp.y
-	var angle: float = _entry["angle"]
-	var body_dir: Vector3 = Vector3(-sin(angle), cos(angle), 0.0) # 허리 → 머리
-	var edge: Vector2 = _entry["edge"]
-	var hidden: float = -(_watch_torso + 0.5) # 머리 끝까지 가장자리 밖
-	_watch_rig.position = Vector3(edge.x * half_w, edge.y * half_h, WATCHER_DEPTH) + body_dir * lerpf(hidden, -WATCHER_TUCK, rise)
-	_watch_rig.rotation.z = angle
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -319,13 +291,5 @@ func _build_visuals() -> void:
 	_stamper.position = Vector3(0.0, STAMPER_REST_Y, 0.0)
 	add_child(_stamper)
 
-	_watch_rig = Node3D.new() # 카메라 자식: 인형 앞(+z)이 카메라를 본다
-	_camera.add_child(_watch_rig)
-	_watcher = WATCHER.instantiate()
-	_watcher.scale = Vector3.ONE * WATCHER_SCALE
-	_watch_rig.add_child(_watcher)
-	_watcher.set_present(true) # 서브씬은 숨은 채 시작한다. 등장은 화면 밖에 두었다가 들이미는 것으로 한다
-	var h: Vector2 = _watcher.body_heights()
-	_watcher.position.y = -h.x * WATCHER_SCALE # 허리가 축 원점
-	_watch_torso = (h.y - h.x) * WATCHER_SCALE
-	_place_watcher(0.0)
+	_watcher = PeekWatcher.new() # 카메라 자식: 화면 가장자리에서 상반신을 들이민다
+	_camera.add_child(_watcher)
