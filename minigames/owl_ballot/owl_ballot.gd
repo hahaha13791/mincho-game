@@ -102,6 +102,7 @@ func _enter_light(duration: float, first: bool) -> void:
 	for i in _watchers.size():
 		var s: Dictionary = OwlRules.watcher_at(OwlLevel.WATCHERS[i]["path"], _cycle)
 		_watchers[i].position = _world(s["pos"])
+		_watchers[i].face(s["dir"])
 		_watchers[i].set_present(true)
 	$HUD/StateLabel.text = "불 켜짐: 외우세요!"
 	$HUD/CycleLabel.text = "어둠 %d / %d" % [_cycle, CONFIG.cycles]

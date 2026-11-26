@@ -1,5 +1,5 @@
 extends SceneTree
-## 얼굴 없는 하얀 인형(body), 반팔 셔츠(shirt), 야구 모자(hat)의 모양을 OBJ로 src/에 내보낸다.
+## 얼굴 없는 하얀 인형(body)과 입힐 파츠(셔츠, 모자, 정장, 선글라스, 완장)의 모양을 OBJ로 src/에 내보낸다.
 ## 그다음 src/rig_figure.py(블렌더)가 뼈대·걷기 애니메이션을 붙여 figure.glb를 만든다. 모양을 고치면 둘 다 다시 실행한다.
 ## 실행: godot --headless --path . -s res://assets/figure/build_figure.gd
 ## 방식: 부위(구·캡슐)를 거리장(SDF)으로 부드럽게 이어 붙이고 surface nets로 메시화. 원점은 발바닥, +z가 앞.
@@ -14,6 +14,9 @@ func _init() -> void:
 	_build(_body, "res://assets/figure/src/body.obj")
 	_build(_shirt, "res://assets/figure/src/shirt.obj")
 	_build(_hat, "res://assets/figure/src/hat.obj")
+	_build(_suit, "res://assets/figure/src/suit.obj")
+	_build(_sunglasses, "res://assets/figure/src/sunglasses.obj")
+	_build(_armband, "res://assets/figure/src/armband.obj")
 	quit()
 
 
@@ -23,12 +26,9 @@ func _body(p: Vector3) -> float:
 	d = _smin(d, _capsule(p, Vector3(0, 1.08, 0), Vector3(0, 1.22, 0), 0.07), 0.05) # 목
 	d = _smin(d, _sphere(p, Vector3(0, 1.42, 0), 0.27), 0.03) # 머리
 	d = _smin(d, _upper_arm(q), 0.04)
-	var fore: float = _capsule(q, Vector3(0.265, 0.8, 0.0), Vector3(0.285, 0.6, 0.03), 0.052)
-	fore = _smin(fore, _ellipsoid(q - Vector3(0.29, 0.54, 0.04), Vector3(0.055, 0.07, 0.06)), 0.03) # 손
+	var fore: float = _smin(_forearm(q), _ellipsoid(q - Vector3(0.29, 0.54, 0.04), Vector3(0.055, 0.07, 0.06)), 0.03) # 손
 	d = _smin(d, fore, 0.02)
-	var leg: float = _capsule(q, Vector3(0.095, 0.68, 0.0), Vector3(0.095, 0.4, 0.01), 0.085)
-	leg = _smin(leg, _capsule(q, Vector3(0.095, 0.4, 0.01), Vector3(0.095, 0.1, 0.0), 0.068), 0.04)
-	leg = _smin(leg, _ellipsoid(q - Vector3(0.1, 0.055, 0.05), Vector3(0.075, 0.055, 0.13)), 0.04) # 발
+	var leg: float = _smin(_legs(q), _ellipsoid(q - Vector3(0.1, 0.055, 0.05), Vector3(0.075, 0.055, 0.13)), 0.04) # 발
 	return _smin(d, leg, 0.03)
 
 
@@ -52,6 +52,37 @@ func _hat(p: Vector3) -> float:
 	return _smin(crown, visor, 0.02)
 
 
+## 감시자 정장: 긴소매 재킷 + 긴바지
+func _suit(p: Vector3) -> float:
+	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
+	var jacket: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.02
+	jacket = _smax(jacket, p.y - 1.13, 0.02) # 목둘레
+	jacket = _smax(jacket, 0.6 - p.y, 0.02) # 밑단
+	jacket = _smax(jacket, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리: 손목 위에서 자름
+	# 바지는 다리 사이가 붙지 않게 조금만 부풀린다(다리 사이 틈 0.02)
+	var pants: float = _smin(_legs(q) - 0.008, _torso(p) - 0.012, 0.03)
+	pants = _smax(pants, p.y - 0.78, 0.02) # 허리(재킷 안쪽)
+	pants = _smax(pants, 0.15 - p.y, 0.02) # 발목
+	return minf(jacket, pants)
+
+
+## 선글라스: 렌즈 둘 + 코다리 + 다리. 머리 앞(+z)에 붙는다
+func _sunglasses(p: Vector3) -> float:
+	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
+	var lens: float = _ellipsoid(q - Vector3(0.09, 1.45, 0.265), Vector3(0.075, 0.05, 0.025))
+	var bridge: float = _capsule(p, Vector3(-0.03, 1.47, 0.275), Vector3(0.03, 1.47, 0.275), 0.015)
+	var temple: float = _capsule(q, Vector3(0.16, 1.46, 0.23), Vector3(0.262, 1.46, 0.06), 0.017)
+	return _smin(_smin(lens, bridge, 0.01), temple, 0.01)
+
+
+## 완장: 왼팔(+x) 윗팔에 두르는 띠. 셔츠·정장 소매보다 두껍게
+func _armband(p: Vector3) -> float:
+	var a: Vector3 = Vector3(0.2, 1.05, 0.0)
+	var b: Vector3 = Vector3(0.265, 0.8, 0.0)
+	var band: float = _capsule(p, a, b, 0.06 + 0.03)
+	return _smax(band, absf((p - a.lerp(b, 0.45)).dot((b - a).normalized())) - 0.045, 0.01)
+
+
 func _torso(p: Vector3) -> float:
 	var f: Vector3 = Vector3(p.x, p.y, p.z * 1.3) # 앞뒤로 납작하게
 	var chest: float = _capsule(f, Vector3(0, 0.92, 0), Vector3(0, 1.06, 0), 0.165)
@@ -60,6 +91,16 @@ func _torso(p: Vector3) -> float:
 
 func _upper_arm(q: Vector3) -> float:
 	return _capsule(q, Vector3(0.2, 1.05, 0.0), Vector3(0.265, 0.8, 0.0), 0.06)
+
+
+func _forearm(q: Vector3) -> float:
+	return _capsule(q, Vector3(0.265, 0.8, 0.0), Vector3(0.285, 0.6, 0.03), 0.052)
+
+
+## 허벅지 + 정강이 (발 제외)
+func _legs(q: Vector3) -> float:
+	var thigh: float = _capsule(q, Vector3(0.095, 0.68, 0.0), Vector3(0.095, 0.4, 0.01), 0.085)
+	return _smin(thigh, _capsule(q, Vector3(0.095, 0.4, 0.01), Vector3(0.095, 0.1, 0.0), 0.068), 0.04)
 
 
 func _sphere(p: Vector3, c: Vector3, r: float) -> float:
