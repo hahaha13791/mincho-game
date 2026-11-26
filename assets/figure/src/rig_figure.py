@@ -17,6 +17,7 @@ FRAMES = 24  # 걷기 한 주기(두 걸음). 24fps 기준 1초
 SMOOTH = 40  # 몸 가중치 다듬기 횟수
 CLOTH_SMOOTH = 40  # 옷 가중치 다듬기 횟수
 SKIRT_HIPS = 0.3  # 코트 자락이 다리 대신 엉덩이를 따르는 비율
+HEAD_FROM = 1.17  # 이 높이(목) 위의 몸은 머리 뼈만 따른다
 
 
 def B(x, y, z):
@@ -78,10 +79,22 @@ def skin(ob, arm, only=None):
             groups[n].add([v.index], w / total, "REPLACE")
     if not only:
         # 거리 가중치는 관절에서 경계가 날카로워 어깨가 꺾여 접힌다
+        pin_head(ob)
         smooth_weights(ob, SMOOTH)
+        pin_head(ob)
     mod = ob.modifiers.new("armature", "ARMATURE")
     mod.object = arm
     ob.parent = arm
+
+
+def pin_head(ob):
+    """목 위는 머리 뼈만 따른다. 머리 아래쪽은 어깨 뼈와 가까워 팔 가중치를 받으면 팔을 들 때 머리가 끌려 일그러진다"""
+    head = ob.vertex_groups["head"]
+    for v in ob.data.vertices:
+        if v.co.z > HEAD_FROM:
+            for g in list(v.groups):
+                ob.vertex_groups[g.group].remove([v.index])
+            head.add([v.index], 1.0, "REPLACE")
 
 
 def smooth_weights(ob, repeat):

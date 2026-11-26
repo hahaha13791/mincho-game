@@ -7,6 +7,8 @@ extends Node3D
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const TOP_Y: float = -2.7 # 책상 윗면 높이(월드). 화면 약 805px
 const DEPTH: float = 1.6
+## 책상(상판·소품) 앞뒤 위치. 뒷면이 주인공(z -0.5) 몸 앞에 오게 앞으로 뺀다. 겹치면 다리가 상판을 뚫고 잘려 보인다
+const DESK_Z: float = 0.75
 const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
 const HERO_SCALE: float = 1.8
 ## 주인공의 작전 행동. xs = 설 수 있는 위치(x) 후보, face = 바라보는 방향(0 = 화면, PI = 보드),
@@ -17,7 +19,7 @@ const ACTIONS: Dictionary = {
 	&"coffee": {"xs": [-1.5, 3.0], "face": 3.0, "prop": &"mug", "hide": "mug"},
 	&"map": {"xs": [-2.0, 2.2], "face": 0.0, "desk": "map"},
 	&"phone": {"xs": [-4.0, 4.5], "face": 0.5, "prop": &"phone"},
-	&"pin": {"xs": [-3.5, 0.0, 3.2], "face": PI, "lift": 0.5, "prop": &"pin"},
+	&"pin": {"xs": [-3.5, 0.0, 3.2], "face": PI, "lift": 0.1, "prop": &"pin"},
 	&"magnifier": {"xs": [-0.8, 3.6], "face": 2.9, "prop": &"magnifier", "hide": "magnifier"},
 	&"write": {"xs": [-3.0, 1.5], "face": 0.2, "prop": &"pen", "desk": "notepad"},
 }
@@ -29,6 +31,7 @@ var _camera: Camera3D
 var _folder: Node3D
 var _hero: Protagonist
 var _desk_props: Dictionary = {} # 이름 -> Node3D (mug, magnifier)
+var _desk_root: Node3D # 책상과 그 위 소품. DESK_Z만큼 앞에
 
 
 func _ready() -> void:
@@ -68,7 +71,8 @@ func set_stage(done: int, force: StringName = &"") -> void:
 	last_action = act_name
 	var a: Dictionary = ACTIONS[act_name]
 	var x: float = a["xs"].pick_random()
-	_hero.position = Vector3(x, TOP_Y - 1.05 + a.get("lift", 0.0), -0.5)
+	# 책상을 앞으로 뺀 만큼(DESK_Z × tan 11°) 내려야 책상 위로 보이는 몸 높이가 같다
+	_hero.position = Vector3(x, TOP_Y - 1.2 + a.get("lift", 0.0), -0.5)
 	_hero.rotation.y = a["face"]
 	_hero.act(String(act_name), a.get("prop", &""))
 	if a.has("hide"):
@@ -89,12 +93,13 @@ func folder_screen_pos() -> Vector2:
 
 
 func _build() -> void:
+	_desk_root = Node3D.new()
+	_desk_root.position.z = DESK_Z
+	add_child(_desk_root)
 	var wood: Color = PALETTE.wood.lightened(0.12)
 	_box(Vector3(22, 0.16, DEPTH), Vector3(0, TOP_Y - 0.08, 0), wood) # 상판
 	_box(Vector3(22, 0.06, 0.06), Vector3(0, TOP_Y - 0.03, DEPTH / 2.0), wood.lightened(0.15)) # 앞 모서리
 	_box(Vector3(22, 5.0, 0.1), Vector3(0, TOP_Y - 2.6, DEPTH / 2.0 - 0.05), wood.darkened(0.15)) # 앞판(화면 아래 끝까지)
-	for x in [-6.0, 0.0, 6.0]: # 서랍 손잡이
-		_box(Vector3(0.6, 0.08, 0.08), Vector3(x, TOP_Y - 0.6, DEPTH / 2.0 + 0.02), PALETTE.iron)
 
 	# 주인공: 책상 뒤에 서서 허리 아래는 책상에 가린다. 위치·행동은 set_stage()에서 정한다
 	_hero = PROTAGONIST.instantiate()
@@ -161,7 +166,7 @@ func _build() -> void:
 func _group(pos: Vector3) -> Node3D:
 	var n: Node3D = Node3D.new()
 	n.position = pos
-	add_child(n)
+	_desk_root.add_child(n)
 	return n
 
 
@@ -172,7 +177,7 @@ func _mat(color: Color) -> StandardMaterial3D:
 
 
 func _box(size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
-	return _box_in(self, size, pos, color)
+	return _box_in(_desk_root, size, pos, color)
 
 
 func _box_in(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> MeshInstance3D:
