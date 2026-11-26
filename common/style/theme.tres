@@ -1,8 +1,22 @@
-[gd_resource type="Theme" load_steps=3 format=3]
+[gd_resource type="Theme" load_steps=4 format=3]
 
 [ext_resource type="FontFile" path="res://assets/fonts/NanumPenScript-Regular.ttf" id="1"]
 
 [sub_resource type="StyleBoxEmpty" id="empty"]
+
+[sub_resource type="StyleBoxFlat" id="hud_card"]
+content_margin_left = 22.0
+content_margin_top = 8.0
+content_margin_right = 22.0
+content_margin_bottom = 8.0
+bg_color = Color(0.98, 0.97, 0.94, 0.92)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.12)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
 
 [resource]
 default_font_size = 28
@@ -20,3 +34,6 @@ HandButton/styles/normal = SubResource("empty")
 HandButton/styles/hover = SubResource("empty")
 HandButton/styles/pressed = SubResource("empty")
 HandButton/styles/focus = SubResource("empty")
+HudLabel/base_type = &"Label"
+HudLabel/font_sizes/font_size = 40
+HudLabel/styles/normal = SubResource("hud_card")

@@ -22,15 +22,20 @@ shadow_opacity = 0.4
 [node name="StateLabel" type="Label" parent="HUD"]
 offset_left = 40.0
 offset_top = 30.0
-offset_right = 900.0
-offset_bottom = 80.0
-theme_override_font_sizes/font_size = 40
+offset_right = 40.0
+offset_bottom = 30.0
+theme_type_variation = &"HudLabel"
 
 [node name="CycleLabel" type="Label" parent="HUD"]
-offset_left = 40.0
-offset_top = 90.0
-offset_right = 900.0
-offset_bottom = 140.0
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_top = 30.0
+offset_right = -40.0
+offset_bottom = 30.0
+grow_horizontal = 0
+theme_type_variation = &"HudLabel"
 
 [node name="HintLabel" type="Label" parent="HUD"]
 anchors_preset = 7

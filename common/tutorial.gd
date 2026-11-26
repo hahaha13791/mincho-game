@@ -40,8 +40,14 @@ static func open(host: Node, intro: String, text: String, on_start: Callable) ->
 	button.text = "시작"
 	button.custom_minimum_size = Vector2(300, 80) # 타이틀 버튼과 같은 크기
 	button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# 튜토리얼 동안 HUD를 숨긴다. 아직 글이 없는 상태 라벨이 빈 카드로 보인다
+	var hud: CanvasLayer = host.get_node_or_null("HUD") as CanvasLayer
+	if hud != null:
+		hud.hide()
 	button.pressed.connect(func() -> void:
 		screen.queue_free()
+		if hud != null:
+			hud.show()
 		on_start.call())
 	box.add_child(button)
 	host.add_child(screen)

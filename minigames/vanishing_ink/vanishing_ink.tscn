@@ -20,8 +20,9 @@ shadow_opacity = 0.4
 [node name="RoundLabel" type="Label" parent="HUD"]
 offset_left = 40.0
 offset_top = 30.0
-offset_right = 400.0
-offset_bottom = 80.0
+offset_right = 40.0
+offset_bottom = 30.0
+theme_type_variation = &"HudLabel"
 
 [node name="HintLabel" type="Label" parent="HUD"]
 anchors_preset = 7

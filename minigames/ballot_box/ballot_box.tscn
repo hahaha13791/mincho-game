@@ -21,15 +21,17 @@ shadow_opacity = 0.4
 [node name="TimerLabel" type="Label" parent="HUD"]
 offset_left = 40.0
 offset_top = 30.0
-offset_right = 400.0
-offset_bottom = 80.0
+offset_right = 40.0
+offset_bottom = 30.0
+theme_type_variation = &"HudLabel"
 text = "30.0"
 
 [node name="FillLabel" type="Label" parent="HUD"]
 offset_left = 40.0
-offset_top = 80.0
-offset_right = 400.0
-offset_bottom = 130.0
+offset_top = 120.0
+offset_right = 40.0
+offset_bottom = 120.0
+theme_type_variation = &"HudLabel"
 
 [node name="AlertLabel" type="Label" parent="HUD"]
 visible = false
