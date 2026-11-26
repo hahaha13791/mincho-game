@@ -22,6 +22,8 @@ const RISE_TIME: float = 0.25 # 머리만 → 다 들어오는 시간. 도착 �
 const KILL_Y: float = -8.0
 const GRAB_GAIN: float = 25.0 # 집은 표가 마우스를 따라오는 속도 (거리 × 이 값)
 const MAX_GRAB_SPEED: float = 30.0
+const TURN_GAIN: float = 20.0 # 집은 표가 목표 각도로 도는 속도 (남은 각도 × 이 값)
+const MAX_TURN_SPEED: float = 25.0
 # 접힌 표 모양: 몸 중심 기준 직사각형 조각들
 const SHAPES: Array = [
 	[Rect2(-1.0, -0.25, 2.0, 0.5)],
@@ -48,7 +50,9 @@ const TUTORIAL_TEXT: String = "접힌 민초 표를 마우스로 끌어다 투�
 var _papers: Array[BallotPaper] = []
 var _tray: BallotPaper
 var _held: BallotPaper
-var _held_offset: Vector3
+var _held_offset: Vector3 # 집은 순간의 (표 중심 - 잡은 점). 표가 돌면 그만큼 같이 돌려 쓴다
+var _held_angle: float # 집은 순간의 각도
+var _held_target: float # Q·E로 정한 목표 각도
 var _state: State = State.TUTORIAL
 var _elapsed: float = 0.0
 var _visits: Array[float] = [] # 도착 시각
@@ -140,9 +144,12 @@ func _is_visiting() -> bool:
 func _physics_process(_delta: float) -> void:
 	if _held != null:
 		# 위치를 직접 대입하면 물리 엔진이 덮어쓰므로, 속도로 마우스 쪽으로 끌어온다 (쌓인 표도 통과하지 않음)
-		var target: Vector3 = _mouse_to_plane(get_viewport().get_mouse_position()) + _held_offset
+		# 잡은 점을 축으로 돌게: 표가 돈 만큼 오프셋도 돌린다
+		var offset: Vector3 = _held_offset.rotated(Vector3.BACK, _held.rotation.z - _held_angle)
+		var target: Vector3 = _mouse_to_plane(get_viewport().get_mouse_position()) + offset
 		_held.linear_velocity = ((target - _held.position) * GRAB_GAIN).limit_length(MAX_GRAB_SPEED)
-		_held.angular_velocity = Vector3.ZERO
+		var turn: float = angle_difference(_held.rotation.z, _held_target)
+		_held.angular_velocity = Vector3(0.0, 0.0, clampf(turn * TURN_GAIN, -MAX_TURN_SPEED, MAX_TURN_SPEED))
 	for p in _papers.duplicate():
 		if p != _held and p != _tray and p.position.y < KILL_Y:
 			_papers.erase(p)
@@ -253,6 +260,8 @@ func _try_pick(point: Vector3) -> void:
 		if p.contains(point):
 			_held = p
 			_held_offset = p.position - point
+			_held_angle = p.rotation.z
+			_held_target = p.rotation.z
 			p.set_waiting(false)
 			p.gravity_scale = 0.0
 			p.linear_velocity = Vector3.ZERO
@@ -262,14 +271,13 @@ func _try_pick(point: Vector3) -> void:
 			return
 
 
-# Q(반시계)·E(시계): 집은 표(없으면 대기 중인 표)를 90° 돌린다. 집은 표는 마우스로 잡은 점을 축으로 돈다
+# Q(반시계)·E(시계): 집은 표(없으면 대기 중인 표)를 90° 돌린다.
+# 집은 표는 물리로 움직여서 각도를 직접 넣으면 엔진이 되돌린다 → 목표 각도만 바꾸고 _physics_process가 돌린다
 func _rotate_paper(angle: float) -> void:
-	var p: BallotPaper = _held if _held != null else _tray
-	if p == null:
-		return
-	p.rotation.z += angle
-	if p == _held:
-		_held_offset = _held_offset.rotated(Vector3.BACK, angle)
+	if _held != null:
+		_held_target += angle
+	elif _tray != null:
+		_tray.rotation.z += angle # 대기 표는 물리가 멈춰 있어 바로 돌려도 된다
 
 
 func _drop() -> void:
