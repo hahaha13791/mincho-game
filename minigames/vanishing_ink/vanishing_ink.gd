@@ -1,7 +1,8 @@
 extends Node3D
 ## 사라지는 잉크(id: vanishing_ink). 마우스를 누르는 동안 다리미를 댄다. 김이 나면 기표가 지워진 것이고,
 ## 그 뒤 다리미 둘레가 타기 전에 떼야 성공. 한 번 떼면 그 라운드는 끝이다.
-## 종이는 왼쪽에서 들어와 오른쪽으로 나간다. 종이마다 지워지는 시간이 다르고, 누레지는 속도도 그에 비례한다.
+## 종이는 왼쪽에서 들어와 오른쪽으로 나간다. 종이마다 지워지는 시간이 빠름·보통·느림으로 다르고, 누레지는 속도도 그에 비례한다.
+## 김 나기 전에 떼도 충분히 댔으면 기표가 옅게 남는다(지운 장으로 치지만 완전범죄는 아님).
 
 enum State { TUTORIAL, READY, IRONING, BETWEEN, ENDED }
 
@@ -15,16 +16,18 @@ const SCORCH_SCALE: float = 1.15 # 그을음 띠 = 바닥판 윤곽을 이만큼
 const IRON_REST_POS: Vector3 = Vector3(0.0, 3.5, 0.0) # 종이 바로 위에 들어 둔다
 const IRON_PRESS_POS: Vector3 = Vector3(0.0, 0.45, 0.0) # 수직으로 내려와 종이 가운데(기표 위)를 덮는다
 const PAPER_OFF_X: float = 13.0 # 종이가 들어오고 나가는 화면 밖 거리
-const SLIDE_TIME: float = 0.5
-const BETWEEN_TIME: float = 1.2
-const TUTORIAL_TEXT: String = "반민초 표의 기표를 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 기표가 지워진 것입니다. 그 뒤에 마우스를 떼세요.\n다리미 둘레가 누레지다 타버리면 들킵니다. 종이마다 지워지는 시간이 다릅니다.\n천천히 누레지는 종이는 천천히 지워집니다. 한 번 떼면 끝!"
+const SLIDE_TIME: float = 0.3
+const BETWEEN_TIME: float = 0.7
+const TUTORIAL_TEXT: String = "반민초 표의 빨간 기표를 지우세요. 마우스를 누르고 있으면 다리미가 내려갑니다.\n김이 나면 기표가 지워진 것입니다. 그 뒤에 마우스를 떼세요.\n다리미 둘레가 누레지다 타버리면 들킵니다. 빨리 누레지는 종이는 빨리 지워집니다.\n조금 일찍 떼면 기표가 옅게 남습니다. 한 번 떼면 끝!"
 
 @export var id: StringName = &"vanishing_ink"
 
 var _state: State = State.TUTORIAL
 var _round: int = 0
-var _successes: int = 0
-var _min_margin: float = INF
+var _successes: int = 0 # 깨끗이 지운 장
+var _faints: int = 0 # 옅게 남은 장
+var _min_margin: float = INF # 깨끗이 지운 장 중 가장 빠듯했던 여유(김 남 → 탐 사이 비율)
+var _tier_bag: PackedFloat32Array = PackedFloat32Array() # 아직 안 낸 속도 단계
 var _t: float = 0.0
 var _steam_at: float = 0.0
 var _burn_at: float = 0.0
@@ -84,11 +87,18 @@ func _next_round() -> void:
 	_round += 1
 	_t = 0.0
 	_steamed = false
-	_steam_at = randf_range(CONFIG.steam_min, CONFIG.steam_max)
+	if _tier_bag.is_empty(): # 단계를 한 번씩 다 낸 뒤 다시 섞는다. 같은 속도가 몰리지 않게
+		_tier_bag = CONFIG.steam_tiers.duplicate()
+	var pick: int = randi() % _tier_bag.size()
+	if _tier_bag.size() > 1 and is_equal_approx(_tier_bag[pick], _steam_at): # 다시 섞은 직후에도 직전 단계와 겹치지 않게
+		pick = (pick + 1) % _tier_bag.size()
+	_steam_at = _tier_bag[pick]
+	_tier_bag.remove_at(pick)
 	_burn_at = _steam_at * CONFIG.burn_ratio
 	_paper_mat.albedo_color = PALETTE.paper
 	_scorch_mat.albedo_color = PALETTE.paper
 	_mark.show()
+	_mark.set_alpha(1.0)
 	_steam.emitting = false
 	_move_iron(IRON_REST_POS)
 	$HUD/RoundLabel.text = "%d / %d장" % [_round, CONFIG.rounds]
@@ -109,9 +119,15 @@ func _release() -> void:
 	_move_iron(IRON_REST_POS)
 	_scorch_mat.albedo_color = PALETTE.paper # 다리미를 들면 열기가 빠져 둘레가 하얗게 돌아온다
 	if _t < _steam_at:
-		_end_round(false, "너무 일찍 뗐다. 기표가 그대로다.", false)
+		var alpha: float = VanishingInkRules.faint_alpha(_t / _steam_at, CONFIG.faint_from)
+		if alpha >= 1.0:
+			_end_round(false, "너무 일찍 뗐다. 기표가 그대로다.", false)
+			return
+		_faints += 1
+		_mark.set_alpha(alpha)
+		_end_round(false, "조금 일렀다. 기표가 옅게 남았다… 눈 나쁜 참관인이길.", false)
 		return
-	_min_margin = minf(_min_margin, _burn_at - _t)
+	_min_margin = minf(_min_margin, (_burn_at - _t) / (_burn_at - _steam_at))
 	_end_round(true, "기표가 감쪽같이 사라졌다.", false)
 
 
@@ -136,7 +152,7 @@ func _end_round(ok: bool, msg: String, burned: bool) -> void:
 func _finish() -> void:
 	_state = State.ENDED
 	_hint.text = ""
-	var rank: Grade.Rank = VanishingInkRules.judge(_successes, CONFIG.rounds, CONFIG.need_success, _min_margin, CONFIG.safe_margin)
+	var rank: Grade.Rank = VanishingInkRules.judge(_successes, _faints, CONFIG.rounds, CONFIG.need_success, _min_margin, CONFIG.safe_margin)
 	var msg: String
 	match rank:
 		Grade.Rank.PERFECT:
@@ -208,8 +224,7 @@ func _build_visuals() -> void:
 	scorch.material = _scorch_mat
 	_paper.add_child(scorch)
 
-	_mark = STAMP_MARK.instantiate() # 반민초 쪽에 찍힌 '卜' 기표. 반민초 색 인주
-	_mark.ink = PALETTE.anti_mincho
+	_mark = STAMP_MARK.instantiate() # 반민초 쪽에 찍힌 '卜' 기표. 기본 인주색(빨강), 다른 미니게임의 반민초 기표와 같음
 	_mark.scale = Vector3.ONE * 2.4
 	_mark.position = Vector3(0.0, PAPER_SIZE.y + 0.015, 0.0)
 	_mark.rotation.y = 0.15

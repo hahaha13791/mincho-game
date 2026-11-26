@@ -14,7 +14,7 @@
 | 2 | 피아노표 | `piano_ballot` | 구현. 날 따라해봐요(라운드 = 보여 주기 마디(뒤 레일 복사본 + "탁!") → 따라 하기 마디(앞 레일에서 찍기) → 쉼 `rest_beats`. 레일 끝은 화면 밖), 감시자 = `common/peek_watcher.gd`(카메라에 붙은 허리 위 상반신이 4방향 가장자리에서 들어옴, 창 비율 따라 가장자리 계산, `Watcher.body_heights()`), 마디별 리듬 패턴(정박·8분·엇박·16분, `piano_config`), 흰 표(반민초 = 빈 종이, 민초 = 민트 '卜' 도장), 카메라 약 30도 | `piano_config.tres` | `test_rules.gd` |
 | 4 | 샌드위치표 | `sandwich_ballot` | 구현. 흰 종이가 한 장씩 쌓이는 연출, 민트 띠지 묶음(닫으면 위·아래 띠지가 이어짐), 버스트 때 종이가 미끄러져 떨어짐 | `sandwich_config.tres`(`sheet_interval` 포함) | `test_rules.gd` |
 | 5 | 올빼미표 | `owl_ballot` | 구현. 맵 15x9, 엄폐물 16개(상자 더미·개표 테이블·ㄱ자 칸막이, `owl_level.gd`의 PIECES), 감시자 3명(시야 방향을 봄, 불이 켜진 동안 다음 자리로 걸어감), '투표함' 글씨 투표함 | `owl_config.tres` | `test_rules.gd`(배치·클리어 가능 경로 검사) |
-| 6 | 사라지는 잉크 | `vanishing_ink` | 구현. 다리미가 위에서 수직으로 내려옴, 그을음 = 바닥판 윤곽 띠(떼면 하얗게), 종이마다 지워지는 시간(타는 시간은 그 배율), 종이가 왼쪽에서 들어와 오른쪽으로 나감 | `ironing_config.tres` | `test_rules.gd` |
+| 6 | 사라지는 잉크 | `vanishing_ink` | 구현. 다리미가 위에서 수직으로 내려옴, 그을음 = 바닥판 윤곽 띠(떼면 하얗게), 종이 속도 3단계(`steam_tiers`, 타는 시간은 그 배율), 빨간 기표, 조금 일찍 떼면 옅게 남음(`faint_from`), 종이가 왼쪽에서 들어와 오른쪽으로 나감 | `ironing_config.tres` | `test_rules.gd` |
 | 9 | 미친 쥐 | `mad_rat` | 구현. 가운데 표지판(버튼은 표지판만 돌림, 주민은 갈림길에서 표지판 방향으로), 오른쪽 = 민트초코 아이스크림가게(반민초 "?!", 민초 "♥"). 판별 규칙(옷 색 기준, 모자 무시)은 미확정 | `mad_rat_config.tres` | `test_rules.gd` |
 
 8번 다그닥-바와스는 삭제했다(미니게임 6개, `GameState.MINIGAME_COUNT = 6`).
