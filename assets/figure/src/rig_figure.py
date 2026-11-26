@@ -16,6 +16,7 @@ OUT = os.path.normpath(os.path.join(SRC, "..", "figure.glb"))
 FRAMES = 24  # 걷기 한 주기(두 걸음). 24fps 기준 1초
 SMOOTH = 40  # 몸 가중치 다듬기 횟수
 CLOTH_SMOOTH = 40  # 옷 가중치 다듬기 횟수
+SKIRT_HIPS = 0.3  # 코트 자락이 다리 대신 엉덩이를 따르는 비율
 
 
 def B(x, y, z):
@@ -93,8 +94,9 @@ def smooth_weights(ob, repeat):
     bpy.ops.object.mode_set(mode="OBJECT")
 
 
-def dress(ob, body, arm):
-    """옷은 몸의 가장 가까운 면에서 가중치를 옮겨 받는다. 몸과 같이 굽어야 자세를 크게 잡아도 몸이 뚫고 나오지 않는다"""
+def dress(ob, body, arm, skirt=False):
+    """옷은 몸의 가장 가까운 면에서 가중치를 옮겨 받는다. 몸과 같이 굽어야 자세를 크게 잡아도 몸이 뚫고 나오지 않는다.
+    skirt: 다리 뼈 가중치 일부를 엉덩이로 옮긴다. 다리를 그대로 따르면 자락이 갈라지고, 전부 옮기면 무릎이 자락을 뚫는다"""
     for name in BONES:
         ob.vertex_groups.new(name=name)
     bpy.context.view_layer.objects.active = ob
@@ -107,6 +109,17 @@ def dress(ob, body, arm):
     mod.layers_vgroup_select_dst = "NAME"
     bpy.ops.object.modifier_apply(modifier=mod.name)
     smooth_weights(ob, CLOTH_SMOOTH)  # 몸통 옆 옷이 바로 옆 팔 면의 가중치를 받아 구겨지는 것을 펴 준다
+    if skirt:
+        legs = {ob.vertex_groups[n].index for n in BONES if n.startswith(("thigh", "shin"))}
+        hips = ob.vertex_groups["hips"]
+        for v in ob.data.vertices:
+            moved = 0.0
+            for g in v.groups:
+                if g.group in legs:
+                    moved += g.weight * SKIRT_HIPS
+                    g.weight *= 1.0 - SKIRT_HIPS
+            if moved > 0.0:
+                hips.add([v.index], moved, "ADD")
     mod = ob.modifiers.new("armature", "ARMATURE")
     mod.object = arm
     ob.parent = arm
@@ -274,7 +287,7 @@ def main():
     skin(load("Armband", 0.5), arm, only="upper_arm.L")
     skin(load("Headband", 0.6), arm, only="head")
     skin(load("Fedora", 0.5), arm, only="head")
-    dress(load("Coat", 0.5), body, arm)
+    dress(load("Coat", 0.5), body, arm, skirt=True)
     skin(load("Badge", 1.0), arm, only="spine")
     make_action(arm, "walk", walk_pose)
     make_action(arm, "idle", idle_pose)

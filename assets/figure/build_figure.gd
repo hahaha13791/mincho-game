@@ -50,7 +50,7 @@ func _fedora(world: Vector3) -> float:
 func _coat(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
 	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.042
-	var skirt: float = _capsule(Vector3(p.x, p.y, p.z * 1.25), Vector3(0, 0.78, 0), Vector3(0, 0.36, 0), 0.215) # 곧게 떨어지는 자락
+	var skirt: float = _capsule(Vector3(p.x, p.y, p.z * 1.05), Vector3(0, 0.78, 0), Vector3(0, 0.36, 0), 0.215) # 곧게 떨어지는 자락
 	d = _smin(d, skirt, 0.05)
 	d = _smax(d, p.y - 1.15, 0.02) # 목둘레
 	d = _smax(d, 0.3 - p.y, 0.02) # 밑단(무릎 위)
@@ -107,21 +107,22 @@ func _hat(p: Vector3) -> float:
 ## 감시자 재킷: 긴소매, 앞은 V자로 파이고 깃(라펠)이 선다. V 안으로 흰 몸이 셔츠처럼 보인다
 func _jacket(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.025
+	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.037
 	d = _smax(d, p.y - 1.13, 0.02) # 목둘레
 	d = _smax(d, 0.55 - p.y, 0.02) # 밑단: 바지 윗부분을 덮는다
 	d = _smax(d, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리: 손목 위에서 자름
 	# V자 앞섶: 앞쪽(z>0.04)이면서 |x| < (y-0.8)*0.55 인 곳을 파낸다
 	var v: float = minf(p.z - 0.04, (p.y - 0.8) * 0.55 - q.x)
 	d = _smax(d, v, 0.01)
-	var lapel: float = _capsule(q, Vector3(0.15, 1.11, 0.1), Vector3(0.012, 0.81, 0.155), 0.022)
+	var lapel: float = _capsule(q, Vector3(0.15, 1.11, 0.11), Vector3(0.012, 0.81, 0.167), 0.022)
 	return _smin(d, lapel, 0.01)
 
 
 ## 감시자 바지: 다리 사이가 붙지 않게 다리는 조금만 부풀린다(다리 사이 틈 0.02). 허리는 재킷 안쪽
 func _pants(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var d: float = _smin(_legs(q) - 0.008, _torso(p) - 0.015, 0.03)
+	var straight: float = _capsule(q, Vector3(0.1, 0.68, 0.0), Vector3(0.1, 0.13, 0.0), 0.09) # 바깥쪽은 종아리까지 곧게 떨어지는 통
+	var d: float = _smin(minf(_legs(q) - 0.008, straight), _torso(p) - 0.015, 0.03)
 	d = _smax(d, p.y - 0.8, 0.02) # 허리
 	return _smax(d, 0.15 - p.y, 0.02) # 발목
 
