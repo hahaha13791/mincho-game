@@ -34,7 +34,7 @@ const SHAPES: Array = [
 const THUMPS: int = 3 # 도착 예고 발소리 수. 하나씩 늘어난다
 const THUMP_GAP: float = 0.8 # 발소리 간격. 마지막 쿵 → 도착 = warn_lead - (THUMPS - 1) × 이 값
 const INTRO_TEXT: String = "투표가 시작되기 전에 투표함에 민초 표를 미리 넣어 둔다. 개표하면 투표한 사람보다 민초 표가 더 많이 나올 것이다." # 튜토리얼 위 칸: 어떤 수법인지
-const TUTORIAL_TEXT: String = "접힌 민초 표를 마우스로 끌어다 투표함에 떨어뜨려 쌓으세요. Q·E를 누르면 표가 90°씩 돌아갑니다.\n쿵, 쿵, 쿵 발소리가 세 번 나면 참관인이 도착합니다.\n참관인이 오기 전에 뚜껑을 닫으세요!\n선을 넘으면 뚜껑이 닫히지 않습니다. 10장을 넣으면 미션성공, 12장이면 완전범죄!"
+const TUTORIAL_TEXT: String = "접힌 민초 표를 마우스로 끌어다 투표함에 떨어뜨려 쌓으세요. Q·E를 누르면 표가 90°씩 돌아갑니다.\n쿵, 쿵, 쿵 발소리가 세 번 나면 참관인이 도착합니다.\n참관인이 오기 전에 Space를 눌러 뚜껑을 닫으세요! 다시 누르면 열립니다.\n선을 넘으면 뚜껑이 닫히지 않습니다. 10장을 넣으면 미션성공, 12장이면 완전범죄!"
 
 @export var id: StringName = &"ballot_box"
 @export var perfect_papers: int = 12 # 이 장수 이상 + 여유 있게 닫으면 완전범죄
@@ -157,9 +157,13 @@ func _physics_process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _state != State.PLAYING or _lid_closed:
+	if _state != State.PLAYING:
 		return
-	if event.is_action_pressed("mg_rotate_ccw"):
+	if event.is_action_pressed("mg_action"): # Space = [뚜껑 닫기/열기] 버튼
+		_on_close_pressed()
+	elif _lid_closed:
+		return # 닫혀 있는 동안은 표를 집거나 돌리지 않는다
+	elif event.is_action_pressed("mg_rotate_ccw"):
 		_rotate_paper(PI / 2.0)
 	elif event.is_action_pressed("mg_rotate_cw"):
 		_rotate_paper(-PI / 2.0)
@@ -201,7 +205,7 @@ func _on_close_pressed() -> void:
 
 func _set_lid(closed: bool) -> void:
 	_lid_closed = closed
-	$HUD/CloseButton.text = "뚜껑 열기" if closed else "뚜껑 닫기"
+	$HUD/CloseButton.text = "뚜껑 열기 [Space]" if closed else "뚜껑 닫기 [Space]"
 	if _lid_tween != null:
 		_lid_tween.kill()
 	_lid_tween = create_tween()
