@@ -6,7 +6,7 @@ signal minigame_finished(id: StringName, rank: Grade.Rank)
 signal all_finished
 
 ## 미니게임 7개
-const MINIGAME_COUNT: int = 7
+const MINIGAME_COUNT: int = 6
 
 var config: VoteConfig = preload("res://common/vote_config.tres")
 var mincho_percent: float

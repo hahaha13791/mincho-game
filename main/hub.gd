@@ -9,8 +9,8 @@ const CARD_SIZE: Vector2 = Vector2(420, 180)
 const FILL_PRESETS: Dictionary = {
 	"전부 완전범죄": [Grade.Rank.PERFECT],
 	"전부 미션성공": [Grade.Rank.SUCCESS],
-	"미션성공 6 + 적발 1": [Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.CAUGHT],
-	"완전범죄 5 + 적발 2": [Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.CAUGHT, Grade.Rank.CAUGHT],
+	"미션성공 5 + 적발 1": [Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.SUCCESS, Grade.Rank.CAUGHT],
+	"완전범죄 4 + 적발 2": [Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.PERFECT, Grade.Rank.CAUGHT, Grade.Rank.CAUGHT],
 	"전부 적발": [Grade.Rank.CAUGHT],
 	"무작위": [],
 }
@@ -68,7 +68,7 @@ func _ready() -> void:
 		preset.add_item(p)
 	tools.add_child(preset)
 	var fill: Button = Button.new()
-	fill.text = "7개 모두 완료 (테스트용)"
+	fill.text = "전부 완료 (테스트용)"
 	fill.pressed.connect(func() -> void:
 		_fill_all(preset.selected)
 		get_tree().reload_current_scene())

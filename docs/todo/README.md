@@ -7,4 +7,3 @@
 | progress.md | **전체 진행 현황, 결정 대기, 다음 할 일. 이어서 작업할 때 가장 먼저 읽는다** |
 | ballot-box.md | 1번 미니게임 (임신한 투표함, id `ballot_box`) |
 | hub.md | 공통 흐름 (결과 화면, 화면 전환, 임시 선택 화면) |
-| tally-board.md | 8번 미니게임 (다그닥-바와스, id `tally_board`). 임시안 구현됨, 재설계 후보 기록 |

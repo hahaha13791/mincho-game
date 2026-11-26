@@ -33,12 +33,6 @@ id = &"vanishing_ink"
 display_name = "사라지는 잉크"
 scene = "res://minigames/vanishing_ink/vanishing_ink.tscn"
 
-[sub_resource type="Resource" id="e8"]
-script = ExtResource("2")
-id = &"tally_board"
-display_name = "다그닥-바와스"
-scene = "res://minigames/tally_board/tally_board.tscn"
-
 [sub_resource type="Resource" id="e9"]
 script = ExtResource("2")
 id = &"mad_rat"
@@ -47,4 +41,4 @@ scene = "res://minigames/mad_rat/mad_rat.tscn"
 
 [resource]
 script = ExtResource("1")
-entries = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e4"), SubResource("e5"), SubResource("e6"), SubResource("e8"), SubResource("e9")])
+entries = Array[ExtResource("2")]([SubResource("e1"), SubResource("e2"), SubResource("e4"), SubResource("e5"), SubResource("e6"), SubResource("e9")])
