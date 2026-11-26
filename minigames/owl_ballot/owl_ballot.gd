@@ -7,6 +7,7 @@ enum State { TUTORIAL, LIGHT, DARK, ENDED }
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: OwlConfig = preload("res://minigames/owl_ballot/owl_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
+const BALLOT_BOX: PackedScene = preload("res://minigames/owl_ballot/props/ballot_box.tscn")
 const CELL: float = 1.2
 ## 엄폐물 겉모습 서브씬. 기준 칸이 원점, 회전 전 모양은 +x(열)·+z(행) 방향으로 뻗는다
 const PROPS: Dictionary = {
@@ -29,7 +30,7 @@ var _done: Array[bool] = []
 var _near_missed: bool = false
 var _env: Environment
 var _pawn: MeshInstance3D
-var _box_meshes: Array[MeshInstance3D] = []
+var _box_meshes: Array[OwlBallotBox] = []
 var _vision_tiles: Dictionary = {} # Vector2i -> MeshInstance3D
 var _watchers: Array[Watcher] = []
 
@@ -149,7 +150,7 @@ func _move(delta: float) -> void:
 		var bi: int = OwlLevel.BOXES.find(_cell)
 		if bi >= 0 and not _done[bi]:
 			_done[bi] = true
-			_box_meshes[bi].material_override = _mat(PALETTE.mincho)
+			_box_meshes[bi].set_done(true)
 			_hint.text = "투표함 처리! (%d / %d)" % [_done.count(true), _done.size()]
 			if not _done.has(false):
 				_finish(true, "")
@@ -240,8 +241,8 @@ func _build_visuals() -> void:
 			shade.position = _world(c) + Vector3(0.0, 0.006, 0.0)
 			_props.add_child(shade)
 	for b in OwlLevel.BOXES:
-		var bm: MeshInstance3D = _box(Vector3(CELL * 0.6, 0.6, CELL * 0.6), PALETTE.ballot_box)
-		bm.position = _world(b) + Vector3(0.0, 0.3, 0.0)
+		var bm: OwlBallotBox = BALLOT_BOX.instantiate()
+		bm.position = _world(b)
 		_props.add_child(bm)
 		_box_meshes.append(bm)
 	for w in OwlLevel.WATCHERS:

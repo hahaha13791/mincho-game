@@ -5,6 +5,7 @@ extends Node3D
 enum State { TUTORIAL, PLAYING, ENDED }
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
+const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const BOX_CENTER_X: float = -2.0
 const BOX_W: float = 6.0 # 안쪽 폭
 const BOX_H: float = 4.0 # 안쪽 높이. 윗면이 선(뚜껑 높이)
@@ -55,7 +56,7 @@ var _closed_at: float = 0.0
 var _min_margin: float = INF
 var _lid_tween: Tween
 var _lid: MeshInstance3D
-var _observer: MeshInstance3D
+var _observer: Watcher # 참관인은 공용 감시자 모습을 쓴다
 
 @onready var _camera: Camera3D = $Camera3D
 
@@ -97,6 +98,10 @@ func _move_observer() -> void:
 		if t >= 0.0 and t < warn_lead + stay + LEAVE_TIME:
 			x = lerpf(OBSERVER_FROM_X, OBSERVER_TO_X, clampf(t / warn_lead, 0.0, 1.0) - clampf((t - warn_lead - stay) / LEAVE_TIME, 0.0, 1.0))
 			warning = t < warn_lead
+	var dx: float = x - _observer.position.x
+	_observer.set_walking(absf(dx) > 0.0001)
+	if absf(dx) > 0.0001:
+		_observer.face(Vector2i(1 if dx > 0.0 else -1, 0))
 	_observer.position.x = x
 	$HUD/AlertLabel.visible = warning
 
@@ -318,6 +323,8 @@ func _build_visuals() -> void:
 	_lid.position = LID_OPEN_POS
 	add_child(_lid)
 
-	_observer = _box(Vector3(1.0, 2.0, 1.0), PALETTE.danger)
-	_observer.position = Vector3(OBSERVER_FROM_X, 0.0, 0.0)
+	_observer = WATCHER.instantiate()
+	_observer.position = Vector3(OBSERVER_FROM_X, -1.0, 0.0) # 발 높이 = 예전 상자 밑면
 	add_child(_observer)
+	_observer.set_present(true)
+	_observer.face(Vector2i(1, 0)) # 투표함 쪽

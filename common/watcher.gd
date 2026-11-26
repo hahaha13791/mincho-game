@@ -5,6 +5,8 @@ extends Node3D
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 
+var _walking: bool = false
+
 @onready var _figure: Node3D = $Figure
 
 
@@ -15,6 +17,13 @@ func _ready() -> void:
 
 func set_present(on: bool) -> void:
 	visible = on
+
+
+## 걷기/서 있기 애니메이션 전환. 이동 자체는 쓰는 쪽이 position으로 한다
+func set_walking(on: bool) -> void:
+	if on != _walking:
+		_walking = on
+		FigureLook.play(_figure, "walk" if on else "idle")
 
 
 ## 격자 방향(열, 행)을 바라본다. 행은 월드 +z. 방향이 없으면 그대로 둔다
