@@ -96,8 +96,11 @@ func collapse() -> void:
 	# 탁자 가장자리 밖까지 옆으로 미끄러진 뒤 아래로 떨어진다(탁자를 뚫지 않게 두 단계)
 	var last: Tween
 	var k: int = mini(8, _sheets.size())
+	if _sheets.size() > k: # 미끄러진 종이 아래로 드러나는 새 맨 위 종이
+		_stamp(_sheets[_sheets.size() - 1 - k])
 	for i in k:
 		var s: Node3D = _sheets[_sheets.size() - 1 - i]
+		_stamp(s) # 미끄러지면 덮여 있던 윗면이 드러난다
 		var dir: float = 1.0 if i % 3 != 0 else -1.0
 		var t: Tween = create_tween()
 		t.tween_interval(i * 0.05)
@@ -118,11 +121,7 @@ func _drop_sheet() -> Tween:
 	_sheets.append(sheet)
 	var shade: Color = PALETTE.paper.darkened(randf_range(0.0, 0.07)) # 장마다 미세하게 달라 옆면에 결이 생긴다
 	_add_box(sheet, Vector3(bundle_xz.x * randf_range(0.97, 1.0), sheet_h * 0.85, bundle_xz.y * randf_range(0.97, 1.0)), Vector3.ZERO, shade)
-	var mark: Node3D = STAMP_MARK.instantiate() # 반민초 기표: 기본 인주색(빨강). 민초 묶음 도장(왼쪽)과 반대편에 손으로 찍은 듯
-	mark.scale = Vector3.ONE * 1.6
-	mark.position = Vector3(randf_range(0.7, 1.0), sheet_h * 0.425 + 0.003, randf_range(-0.2, 0.2))
-	mark.rotation.y = randf_range(-0.35, 0.35)
-	sheet.add_child(mark)
+	_stamp(sheet)
 	var rest_pos: Vector3 = Vector3(randf_range(-0.04, 0.04), y, randf_range(-0.04, 0.04))
 	var rest_rot: Vector3 = Vector3(0, randf_range(-0.03, 0.03), 0)
 	if randf() < STICK_OUT_CHANCE: # 삐져나온 종이: 한쪽으로 크게 밀리고 끝이 살짝 들림
@@ -136,7 +135,27 @@ func _drop_sheet() -> Tween:
 	t.tween_property(sheet, "position", rest_pos, FALL_TIME)
 	t.tween_property(sheet, "rotation", rest_rot, FALL_TIME)
 	t.chain().tween_callback(sheet_landed.emit)
+	if _sheets.size() >= 2: # 내려앉으면 바로 아래 종이의 도장은 덮여 안 보이므로 지운다. 몇 장을 쌓든 도장은 1~2개뿐
+		var below: Node3D = _sheets[-2]
+		t.tween_callback(func() -> void: _unstamp(below))
 	return t
+
+
+# 반민초 기표: 기본 인주색(빨강). 민초 묶음 도장(왼쪽)과 반대편에 손으로 찍은 듯
+func _stamp(sheet: Node3D) -> void:
+	if sheet.has_node("Mark"):
+		return
+	var mark: Node3D = STAMP_MARK.instantiate()
+	mark.name = "Mark"
+	mark.scale = Vector3.ONE * 1.6
+	mark.position = Vector3(randf_range(0.7, 1.0), sheet_h * 0.425 + 0.003, randf_range(-0.2, 0.2))
+	mark.rotation.y = randf_range(-0.35, 0.35)
+	sheet.add_child(mark)
+
+
+func _unstamp(sheet: Node3D) -> void:
+	if sheet.has_node("Mark"):
+		sheet.get_node("Mark").free() # queue_free면 같은 프레임에 다시 찍을 때 이름이 겹친다
 
 
 func _add_box(parent: Node3D, size: Vector3, pos: Vector3, color: Color) -> void:
