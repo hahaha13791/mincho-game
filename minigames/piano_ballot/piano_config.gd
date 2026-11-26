@@ -8,7 +8,7 @@ extends Resource
 @export var rounds: int = 8 ## 라운드 수(= 따라 하기 횟수)
 @export var rest_beats: float = 2.0 ## 따라 하기가 끝나고 다음 보여 주기까지 쉬는 박
 @export var mix_from: int = 2 ## 이 라운드부터 민초 표가 섞임
-@export var anti_ratio: float = 0.6 ## 섞인 구간에서 반민초 표 비율
+@export var mincho_per_round: int = 1 ## 섞인 라운드마다 민초 표 장수(감시자 표와 겹치지 않음)
 @export var vary_from: int = 1 ## 이 라운드부터 8분·엇박 패턴이 나옴
 @export var fast_from: int = 4 ## 이 라운드부터 16분 패턴도 나옴
 @export var watch_from: int = 4 ## 이 라운드부터 감시자가 나옴
@@ -17,19 +17,20 @@ extends Resource
 @export var window: float = 0.17 ## 박자 판정 허용 오차(초, ±). 표 간격이 좁으면 간격의 절반으로 줄어든다
 @export var perfect_mistakes: int = 1 ## 실수가 이 이하면 완전범죄
 @export var success_mistakes: int = 5 ## 실수가 이 이하면 미션성공, 넘으면 적발
-## 한 마디 안에서 표가 오는 박(0 ~ 4 미만)
+## 한 마디 안에서 표가 오는 박(0 ~ 4 미만). 패턴마다 앞뒤 표와 1박 이상 떨어진 표가 하나는 있어야 감시자를 붙일 수 있다(test_rules가 검사)
 @export var patterns_basic: Array[PackedFloat32Array] = [
 	PackedFloat32Array([0.0, 1.0, 2.0, 3.0]), # 정박
 ]
 @export var patterns_vary: Array[PackedFloat32Array] = [
-	PackedFloat32Array([0.0, 1.0, 2.0, 2.5, 3.0]), # 8분 하나
-	PackedFloat32Array([0.0, 0.5, 1.0, 2.0, 3.0]),
-	PackedFloat32Array([0.0, 1.5, 2.0, 3.0]), # 당김음
-	PackedFloat32Array([0.5, 1.5, 2.5, 3.5]), # 전부 엇박
-	PackedFloat32Array([0.0, 1.0, 1.5, 2.5, 3.0]),
+	PackedFloat32Array([0.0, 1.0, 1.5, 2.0, 2.5, 3.0]), # 뒤쪽 8분
+	PackedFloat32Array([0.0, 0.5, 1.0, 1.5, 2.0, 3.0]), # 앞쪽 8분
+	PackedFloat32Array([0.0, 1.0, 2.0, 2.5, 3.0, 3.5]),
+	PackedFloat32Array([0.5, 1.5, 2.0, 2.5, 3.5]), # 엇박
+	PackedFloat32Array([0.0, 1.5, 2.0, 2.5, 3.0]), # 당김음
 ]
 @export var patterns_fast: Array[PackedFloat32Array] = [
-	PackedFloat32Array([0.0, 1.0, 1.25, 1.5, 2.0, 3.0]), # 16분 셋
-	PackedFloat32Array([0.0, 0.75, 1.5, 2.0, 3.0]), # 점8분
-	PackedFloat32Array([0.0, 1.0, 2.0, 2.25, 3.0]),
+	PackedFloat32Array([0.0, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0]), # 16분 셋
+	PackedFloat32Array([0.0, 0.5, 0.75, 1.0, 2.0, 3.0]),
+	PackedFloat32Array([0.0, 1.0, 1.5, 1.75, 2.0, 2.5, 3.0]),
+	PackedFloat32Array([0.0, 0.75, 1.5, 2.0, 2.25, 2.5, 3.5]), # 점8분 + 16분
 ]

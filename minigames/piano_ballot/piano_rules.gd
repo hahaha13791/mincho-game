@@ -11,24 +11,29 @@ const MEASURE: float = 4.0 # 보여 주기·따라 하기 마디 길이(박). �
 ## 라운드 k: 보여 주기 [k × 주기, +4) → 따라 하기 [+4, +8) → 쉼 rest_beats. 표는 따라 하기 구간에만 있다
 static func build(cfg: PianoConfig, rng: RandomNumberGenerator) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
+	var rounds: Array[Array] = [] # 라운드마다 표 번호
 	for k in cfg.rounds:
 		var pool: Array[PackedFloat32Array] = cfg.patterns_basic
 		if k >= cfg.fast_from:
 			pool = cfg.patterns_vary + cfg.patterns_fast
 		elif k >= cfg.vary_from:
 			pool = cfg.patterns_vary
+		var ids: Array[int] = []
 		for o in pool[rng.randi() % pool.size()]:
-			out.append({"time": response_start(cfg, k) + o, "anti": k < cfg.mix_from or rng.randf() < cfg.anti_ratio, "watcher": false})
+			ids.append(out.size())
+			out.append({"time": response_start(cfg, k) + o, "anti": true, "watcher": false})
+		rounds.append(ids)
 	var gaps: PackedFloat32Array = half_gaps(out)
-	for k in range(cfg.watch_from, cfg.rounds, cfg.watch_every):
-		var picks: Array[int] = []
-		var start: float = response_start(cfg, k)
-		for i in out.size():
-			var t: float = out[i]["time"]
-			if t >= start and t < start + MEASURE and gaps[i] * 2.0 >= WATCH_MIN_GAP:
-				picks.append(i)
-		if not picks.is_empty():
-			out[picks[rng.randi() % picks.size()]]["watcher"] = true
+	for k in cfg.rounds:
+		var ids: Array = rounds[k]
+		if k >= cfg.watch_from and (k - cfg.watch_from) % cfg.watch_every == 0:
+			var picks: Array = ids.filter(func(i: int) -> bool: return gaps[i] * 2.0 >= WATCH_MIN_GAP)
+			if not picks.is_empty():
+				out[picks[rng.randi() % picks.size()]]["watcher"] = true
+		if k >= cfg.mix_from: # 민초 표는 감시자 표가 아닌 표 중에서 정해진 장수만
+			var rest: Array = ids.filter(func(i: int) -> bool: return not out[i]["watcher"])
+			for n in mini(cfg.mincho_per_round, rest.size()):
+				out[rest.pop_at(rng.randi() % rest.size())]["anti"] = false
 	return out
 
 

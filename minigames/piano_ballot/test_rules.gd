@@ -21,6 +21,9 @@ func _init() -> void:
 		var early_ok: bool = true
 		var watch_per_round: Array[int] = []
 		watch_per_round.resize(cfg.rounds)
+		var mincho_per_round: Array[int] = []
+		mincho_per_round.resize(cfg.rounds)
+		var mincho_watch_ok: bool = true
 		var watch_gap_ok: bool = true
 		var in_response_ok: bool = true
 		for i in b.size():
@@ -36,6 +39,9 @@ func _init() -> void:
 				continue
 			if k < cfg.vary_from:
 				early_ok = early_ok and b[i]["anti"] and not b[i]["watcher"] and is_equal_approx(t, roundf(t))
+			if not b[i]["anti"]:
+				mincho_per_round[k] += 1
+				mincho_watch_ok = mincho_watch_ok and not b[i]["watcher"]
 			if b[i]["watcher"]:
 				watch_per_round[k] += 1
 				watch_gap_ok = watch_gap_ok and gaps[i] * 2.0 >= PianoRules.WATCH_MIN_GAP
@@ -43,9 +49,18 @@ func _init() -> void:
 		_check(in_response_ok, "표는 따라 하기 마디에만 있음(보여 주기·쉼에는 없음)")
 		_check(early_ok, "초반은 정박의 반민초 표, 감시자 없음")
 		_check(watch_gap_ok, "감시자 표는 옆 표와 충분히 떨어짐")
+		_check(mincho_watch_ok, "민초 표는 감시자 표와 겹치지 않음")
 		for k in cfg.rounds:
+			_check(mincho_per_round[k] == (cfg.mincho_per_round if k >= cfg.mix_from else 0), "민초 표는 %d라운드부터 라운드마다 %d장 (%d라운드)" % [cfg.mix_from, cfg.mincho_per_round, k])
 			var want: int = 1 if k >= cfg.watch_from and (k - cfg.watch_from) % cfg.watch_every == 0 else 0
 			_check(watch_per_round[k] == want, "감시자는 %d라운드부터 %d라운드마다 하나 (%d라운드)" % [cfg.watch_from, cfg.watch_every, k])
+	for pat in cfg.patterns_vary + cfg.patterns_fast: # 따라 하기 앞뒤는 비어 있으므로 패턴 끝은 간격 무한
+		var ok: bool = false
+		for j in pat.size():
+			var before: float = INF if j == 0 else pat[j] - pat[j - 1]
+			var after: float = INF if j == pat.size() - 1 else pat[j + 1] - pat[j]
+			ok = ok or minf(before, after) >= PianoRules.WATCH_MIN_GAP
+		_check(ok, "패턴 %s에 감시자를 붙일 표가 있음" % [pat])
 	_check(is_equal_approx(PianoRules.response_start(cfg, 1) - PianoRules.response_start(cfg, 0), 8.0 + cfg.rest_beats), "라운드 주기 = 보여 주기 + 따라 하기 + 쉼")
 	var sample: Array[Dictionary] = [{"time": 0.0}, {"time": 1.0}, {"time": 1.25}, {"time": 3.0}]
 	var g: PackedFloat32Array = PianoRules.half_gaps(sample)
