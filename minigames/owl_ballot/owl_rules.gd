@@ -24,7 +24,7 @@ static func watcher_at(path: Array, cycle: int) -> Dictionary:
 	return {"pos": pos, "dir": Vector2i.ZERO}
 
 
-## 감시자 칸에서 dir 방향으로 range칸. 방해물에서 끊긴다. 감시자 칸 자체도 포함
+## 감시자 칸 + dir 방향으로 range칸(방해물에서 끊김) + 바로 앞 대각선 두 칸(키패드로 5에서 7·8·9). 감시자 칸 자체도 포함
 static func vision(map: Array[String], pos: Vector2i, dir: Vector2i, range: int) -> Array[Vector2i]:
 	var out: Array[Vector2i] = [pos]
 	for i in range:
@@ -32,6 +32,11 @@ static func vision(map: Array[String], pos: Vector2i, dir: Vector2i, range: int)
 		if is_wall(map, c):
 			break
 		out.append(c)
+	if dir != Vector2i.ZERO:
+		var side: Vector2i = Vector2i(dir.y, dir.x) # dir에 수직
+		for c in [pos + dir + side, pos + dir - side]:
+			if not is_wall(map, c):
+				out.append(c)
 	return out
 
 
