@@ -90,6 +90,7 @@ func _on_stand() -> void:
 	_state = State.ANIMATING
 	_refresh()
 	await _stack.add_bundle(true) # 위 민초 묶음도 확정
+	await _stack.tie()
 	match SandwichRules.evaluate(_sheets, CONFIG.bust_limit, CONFIG.gain_target):
 		SandwichRules.Outcome.OK:
 			_min_sheets = mini(_min_sheets, _sheets)

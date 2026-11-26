@@ -18,6 +18,7 @@ var bundle_h: float = 0.25
 var interval: float = 0.05 # 종이 사이 간격(초)
 
 var _top_y: float = 0.0
+var _floor_y: float = 0.0
 var _sheets: Array[Node3D] = []
 
 
@@ -26,6 +27,29 @@ func reset(floor_y: float) -> void:
 		c.queue_free()
 	_sheets.clear()
 	_top_y = floor_y
+	_floor_y = floor_y
+
+
+## 다발 완성: 위·아래 묶음의 띠지를 앞뒷면 세로 띠로 이어 묶는다(아래에서 위로 자라남)
+func tie() -> void:
+	var h: float = _top_y - _floor_y
+	# 띠지가 조이면서 앞뒤(z)로 삐져나온 종이를 안으로 밀어 넣는다(띠지를 뚫고 보이지 않게)
+	var loose: Array[Node3D] = _sheets.filter(func(s: Node3D) -> bool: return absf(s.position.z) > 0.04 or absf(s.rotation.y) > 0.03)
+	if not loose.is_empty(): # 빈 Tween은 에러라 밀 종이가 있을 때만
+		var squeeze: Tween = create_tween().set_parallel(true)
+		for s in loose:
+			squeeze.tween_property(s, "position:z", clampf(s.position.z, -0.04, 0.04), 0.12)
+			squeeze.tween_property(s, "rotation:y", clampf(s.rotation.y, -0.03, 0.03), 0.12)
+		await squeeze.finished
+	var t: Tween = create_tween().set_parallel(true)
+	for side in [1.0, -1.0]:
+		var pivot: Node3D = Node3D.new() # 밑면 기준으로 자라게
+		pivot.position = Vector3(0, _floor_y, side * (bundle_xz.y / 2.0 + 0.02))
+		pivot.scale.y = 0.001
+		add_child(pivot)
+		_add_box(pivot, Vector3(0.55, h, 0.02), Vector3(0, h / 2.0, 0), PALETTE.mincho)
+		t.tween_property(pivot, "scale:y", 1.0, 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	await t.finished
 
 
 ## 민초 묶음을 한 덩어리로 툭 떨어뜨린다. 끝나면 돌아온다(await 가능)
