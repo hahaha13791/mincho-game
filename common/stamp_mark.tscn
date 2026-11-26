@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://minigames/piano_ballot/props/stamp_mark.gd" id="1"]
+[ext_resource type="Script" path="res://common/stamp_mark.gd" id="1"]
 
 [sub_resource type="TorusMesh" id="ring"]
 inner_radius = 0.2

@@ -9,3 +9,4 @@ extends Resource
 @export var bust_limit: int = 100 ## 반민초 표가 이 장수를 넘으면 버스트
 @export var gain_target: int = 50 ## 다발 하나가 성공하려면 필요한 반민초 표 장수
 @export var perfect_sheets: int = 85 ## 모든 다발이 성공하고 전부 이 장수 이상이면 완전범죄
+@export var sheet_interval: float = 0.05 ## 쌓기 연출에서 종이가 한 장씩 떨어지는 간격(초)
