@@ -133,8 +133,8 @@ func _build() -> void:
 	arm1.rotation.z = -0.35
 	var arm2: MeshInstance3D = _cap(lamp, 0.06, 1.2, Vector3(0.8, 1.75, 0), PALETTE.stamp)
 	arm2.rotation.z = 1.0
-	var shade: MeshInstance3D = _cone(lamp, 0.12, 0.5, 0.55, Vector3(1.35, 1.6, 0), PALETTE.mincho.darkened(0.25))
-	shade.rotation.z = 0.5
+	# 갓은 팔 끝에 매달려 아래를 본다(빛이 곧게 내려와 책상 웅덩이와 이어지게)
+	var shade: MeshInstance3D = _cone(lamp, 0.12, 0.5, 0.55, Vector3(1.31, 1.18, 0), PALETTE.mincho.darkened(0.25))
 	_shade = shade
 
 	# 커피잔

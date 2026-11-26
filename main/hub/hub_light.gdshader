@@ -13,9 +13,9 @@ uniform vec2 ceiling_radius = vec2(950.0, 1300.0);
 uniform vec2 lamp_shade; // 스탠드 갓 입구
 uniform vec2 lamp_pool; // 갓이 비추는 책상 위
 uniform float mouth_half = 45.0; // 빛줄기가 시작하는 갓 입구 반폭
-uniform float beam_strength = 0.4; // 공기 중 빛줄기는 웅덩이보다 옅게
+uniform float beam_strength = 0.45; // 공기 중 빛줄기는 웅덩이보다 옅게
 uniform float lamp_warm = 0.16; // 스탠드 빛에만 더 얹는 따뜻한 색
-uniform vec2 pool_radius = vec2(210.0, 32.0); // 책상 윗면이 화면에서 얇아 납작하게(넘치면 책상 밑까지 밝아짐)
+uniform vec2 pool_radius = vec2(140.0, 24.0); // 책상 윗면이 화면에서 얇아 납작하게(넘치면 책상 밑까지 밝아짐)
 
 float hash(float n) {
 	return fract(sin(n * 12.9898) * 43758.5453);
@@ -37,8 +37,8 @@ float beam(vec2 p, vec2 a, vec2 b, float w0, float w1) {
 	float t = dot(v, dir) / len;
 	float d = abs(v.x * dir.y - v.y * dir.x);
 	float w = mix(w0, w1, clamp(t, 0.0, 1.0));
-	float along = smoothstep(0.0, 0.08, t) * (1.0 - smoothstep(0.85, 1.0, t)); // 웅덩이에서 끝(책상을 뚫고 내려가지 않게)
-	return (1.0 - smoothstep(0.4, 1.0, d / w)) * along * mix(1.0, 0.6, t);
+	float along = smoothstep(0.0, 0.05, t) * (1.0 - smoothstep(0.9, 1.0, t)); // 웅덩이에서 끝(책상을 뚫고 내려가지 않게)
+	return (1.0 - smoothstep(0.4, 1.0, d / w)) * along * mix(0.7, 1.0, t); // 아래로 갈수록 밝아져 웅덩이로 이어진다
 }
 
 float spot(vec2 p, vec2 c, vec2 r, float inner) {
@@ -48,7 +48,7 @@ float spot(vec2 p, vec2 c, vec2 r, float inner) {
 void fragment() {
 	vec2 p = UV * screen_size;
 	float light = spot(p, ceiling, ceiling_radius, 0.15);
-	float ray = beam(p, lamp_shade, lamp_pool, mouth_half, pool_radius.x * 0.8) * beam_strength;
+	float ray = beam(p, lamp_shade, lamp_pool, mouth_half, pool_radius.x * 0.9) * beam_strength;
 	ray *= 1.0 - smoothstep(lamp_pool.y - 10.0, lamp_pool.y + 10.0, p.y); // 빛줄기가 비스듬해 아래 가장자리가 책상 밑으로 새지 않게
 	float lamp = max(ray, spot(p, lamp_pool, pool_radius, 0.3)) * flicker(TIME);
 	light = max(light, lamp);
