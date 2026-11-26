@@ -19,8 +19,7 @@ var _back: StandardMaterial3D # 접혀서 뒤집힌 면
 var _shade: StandardMaterial3D # 겹친 단 그림자·접힌 선
 
 
-## stamped = false면 기표 없이(뒤집힌 면). 여러 장 겹친 더미에서 기표가 어지럽게 겹치지 않게
-func setup(shape: Array, paper: Color, ink: Color, stamped: bool = true) -> void:
+func setup(shape: Array, paper: Color, ink: Color) -> void:
 	rects = shape
 	axis_lock_linear_z = true
 	axis_lock_angular_x = true
@@ -46,8 +45,6 @@ func setup(shape: Array, paper: Color, ink: Color, stamped: bool = true) -> void
 		stamp_at = _build_strip(rects[0])
 	else:
 		stamp_at = _build_square(rects[0])
-	if not stamped:
-		return
 	var stamp: Node3D = STAMP_MARK.instantiate()
 	stamp.ink = ink
 	stamp.scale = Vector3.ONE * STAMP_SCALE
