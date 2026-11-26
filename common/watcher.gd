@@ -25,6 +25,16 @@ func set_present(on: bool) -> void:
 	visible = on
 
 
+## 감시자 원점(발) 기준 (허리 높이, 머리 끝 높이). 크기 1 기준. 상반신만 화면에 내보일 때 쓴다
+func body_heights() -> Vector2:
+	var to_local: Transform3D = global_transform.affine_inverse()
+	var pants: MeshInstance3D = _figure.find_child("Pants", true, false)
+	var body: MeshInstance3D = _figure.find_child("Body", true, false)
+	var waist: float = (to_local * pants.global_transform * pants.get_aabb()).end.y
+	var head: float = (to_local * body.global_transform * body.get_aabb()).end.y
+	return Vector2(waist, head)
+
+
 ## 걷기/서 있기 애니메이션 전환. 이동 자체는 쓰는 쪽이 position으로 한다
 func set_walking(on: bool) -> void:
 	if on != _walking:
