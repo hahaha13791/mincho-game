@@ -52,7 +52,8 @@
 
 - ~~리더보드 이름 입력~~: 타이틀 원서 서명란에 키보드로 입력(비면 `민초단원 N호`). 완료
 - **완장 쓰임새**: 감시자용 완장은 만들어만 둠(주인공 4~5단계에는 민트 완장으로 사용 중)
-- **전시 중 기록 초기화 방법**: 전시 시작 전 `user://leaderboard.json` 삭제. 자동 복귀 90초가 적당한지
+- **전시용 실행 파일**: `godot --headless --path . --export-release "Windows Desktop" build/minchogame.exe`(설정 `export_presets.cfg`, 템플릿 4.7 필요). exe 하나에 데이터가 들어 있고 전시 PC에는 이것만 복사한다. 내보낸 판만 전체 화면(`window/size/mode.template=3`), 에디터 실행은 창 모드. 릴리스 exe는 씬 경로 인자를 막아서, 내보낸 내용 확인은 `godot --main-pack build/minchogame.exe res://<씬>.tscn`으로 한다(2026-11-26 전 화면·키 검사 통과)
+- **전시 중 기록 초기화**: 리더보드는 `%APPDATA%\Godotpp_userdata\mincho-game\leaderboard.json`(내보낸 exe도 같은 곳). 지우면 빈 리더보드. 개발 PC의 테스트 기록은 2026-11-26에 지움. 자동 복귀 90초가 적당한지는 미정
 
 ## 알려진 문제·확인 못 한 것
 

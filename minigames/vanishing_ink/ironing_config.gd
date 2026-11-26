@@ -9,3 +9,9 @@ extends Resource
 @export var burn_ratio: float = 1.6 ## 타는 시점 = 김 나는 시점 × 이 값. 빨리 지워지는 종이는 누레지는 것도 빠르다
 @export var faint_from: float = 0.6 ## 김 나기 전에 떼도 김 시점의 이 비율 이상 댔으면 기표가 옅게 남는다(미션성공까지만)
 @export var safe_margin: float = 0.35 ## 김 남 → 탐 사이 시간 중 이 비율 이상 남기고 떼야 '여유'. 전부 여유 있게 지우면 완전범죄
+
+
+## steam_tiers 복사본. const CONFIG에서 CONFIG.steam_tiers.duplicate()를 바로 쓰면 분석기가 가져오기 중
+## 아직 빈 리소스로 미리 계산하다 파싱 에러를 낸다(메서드 호출은 미리 계산하지 않는다)
+func tiers_copy() -> PackedFloat32Array:
+	return steam_tiers.duplicate()

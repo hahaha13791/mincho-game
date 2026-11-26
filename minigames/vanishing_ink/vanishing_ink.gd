@@ -91,7 +91,7 @@ func _next_round() -> void:
 	_t = 0.0
 	_steamed = false
 	if _tier_bag.is_empty(): # 단계를 한 번씩 다 낸 뒤 다시 섞는다. 같은 속도가 몰리지 않게
-		_tier_bag = CONFIG.steam_tiers.duplicate()
+		_tier_bag = CONFIG.tiers_copy()
 	var pick: int = randi() % _tier_bag.size()
 	if _tier_bag.size() > 1 and is_equal_approx(_tier_bag[pick], _steam_at): # 다시 섞은 직후에도 직전 단계와 겹치지 않게
 		pick = (pick + 1) % _tier_bag.size()
