@@ -13,6 +13,7 @@ extends Resource
 @export var suit: Color = Color("4a4d55") # 감시자 정장. 정당색을 피해 무채색
 @export var sunglasses: Color = Color("1c1c1f")
 @export var belt: Color = Color("3a3b40") # 컨베이어 고무 벨트
+@export var stamp: Color = Color("2b2d33") # 기표 도장 몸통
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")

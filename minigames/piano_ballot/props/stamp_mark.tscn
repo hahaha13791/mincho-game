@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://minigames/piano_ballot/props/stamp_mark.gd" id="1"]
+
+[sub_resource type="TorusMesh" id="ring"]
+inner_radius = 0.2
+outer_radius = 0.25
+rings = 32
+
+[node name="StampMark" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Ring" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.3, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("ring")
+
+[node name="Glyph" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+pixel_size = 0.0045
+shaded = false
+text = "卜"
+font_size = 64
+outline_size = 8

@@ -1,0 +1,50 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://minigames/piano_ballot/props/stamp.gd" id="1"]
+
+[sub_resource type="CylinderMesh" id="face"]
+top_radius = 0.3
+bottom_radius = 0.3
+height = 0.08
+
+[sub_resource type="CylinderMesh" id="collar"]
+top_radius = 0.26
+bottom_radius = 0.33
+height = 0.14
+
+[sub_resource type="CylinderMesh" id="body"]
+top_radius = 0.16
+bottom_radius = 0.19
+height = 0.7
+
+[sub_resource type="CylinderMesh" id="ring"]
+top_radius = 0.175
+bottom_radius = 0.175
+height = 0.06
+
+[sub_resource type="SphereMesh" id="knob"]
+radius = 0.22
+height = 0.4
+
+[node name="Stamp" type="Node3D"]
+script = ExtResource("1")
+
+[node name="InkFace" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.46, 0)
+mesh = SubResource("face")
+
+[node name="MetalCollar" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.35, 0)
+mesh = SubResource("collar")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.07, 0)
+mesh = SubResource("body")
+
+[node name="MetalRing" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+mesh = SubResource("ring")
+
+[node name="Knob" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("knob")

@@ -8,6 +8,8 @@ const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: PianoConfig = preload("res://minigames/piano_ballot/piano_config.tres")
 const WATCHER: PackedScene = preload("res://common/watcher.tscn")
 const CONVEYOR: PackedScene = preload("res://minigames/piano_ballot/props/conveyor.tscn")
+const STAMP: PackedScene = preload("res://minigames/piano_ballot/props/stamp.tscn")
+const STAMP_MARK: PackedScene = preload("res://minigames/piano_ballot/props/stamp_mark.tscn")
 const SPACING: float = 2.0 # 박자당 표 사이 거리
 const STAMPER_REST_Y: float = 2.5
 const STAMPER_PRESS_Y: float = 0.5
@@ -26,7 +28,7 @@ var _next_resolve: int = 0
 var _mistakes: int = 0
 var _warn_until: float = -1.0
 var _sfx: AudioStreamPlayer
-var _stamper: MeshInstance3D
+var _stamper: Node3D
 var _watcher: Watcher
 var _conveyor: Conveyor
 var _stamp_tween: Tween
@@ -38,7 +40,7 @@ var _stamp_tween: Tween
 
 func _ready() -> void:
 	$Sun.rotation_degrees = Vector3(-50.0, 20.0, 0.0)
-	_camera.look_at_from_position(Vector3(0.0, 8.0, 7.0), Vector3(0.0, 0.0, 0.0))
+	_camera.look_at_from_position(Vector3(0.0, 5.5, 9.5), Vector3(0.0, 0.0, 0.0)) # 약 30도. 컨베이어 옆면(롤러)이 보이게
 	_beat_dur = 60.0 / CONFIG.bpm
 	_first = CONFIG.count_in * _beat_dur
 	_sfx = AudioStreamPlayer.new()
@@ -97,8 +99,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if i < 0 or i >= _beats.size() or _resolved[i] or absf(_t - _first - i * _beat_dur) > CONFIG.window:
 		return # 박자에서 벗어난 클릭은 아무것도 찍지 못한다
 	_resolved[i] = true
-	var mark: MeshInstance3D = _box(Vector3(0.5, 0.02, 0.5), PALETTE.danger)
-	mark.position.y = 0.05
+	var mark: Node3D = STAMP_MARK.instantiate()
+	mark.position.y = 0.035 # 표 윗면
 	_ballots[i].add_child(mark)
 	if _beats[i]["watcher"]:
 		_finish(true, "감시자 코앞에서 쾅! 도장 소리가 온 마을에 울렸다.")
@@ -203,7 +205,7 @@ func _build_visuals() -> void:
 	frame.position.y = 0.06
 	add_child(frame)
 
-	_stamper = _box(Vector3(0.7, 1.0, 0.7), PALETTE.ballot_box)
+	_stamper = STAMP.instantiate()
 	_stamper.position = Vector3(0.0, STAMPER_REST_Y, 0.0)
 	add_child(_stamper)
 
