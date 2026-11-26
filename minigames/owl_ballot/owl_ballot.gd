@@ -15,13 +15,14 @@ const PROPS: Dictionary = {
 	&"table": preload("res://minigames/owl_ballot/props/table.tscn"),
 	&"partition": preload("res://minigames/owl_ballot/props/partition.tscn"),
 }
-const TUTORIAL_TEXT: String = "불이 켜진 동안 방해물, 투표함(파랑), 감시자의 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동합니다. 가로로 먼저, 세로로 걸어가며 방해물에서 멈춥니다.\n투표함 칸에 들어가면 손을 쓴 것입니다. 전부 처리하면 성공!\n불이 켜지는 순간 감시자 시야에 있으면 들킵니다. 깜빡이면 곧 전환됩니다. 감시자는 일정한 순서로 움직입니다."
+const TUTORIAL_TEXT: String = "불이 켜진 동안 방해물, 투표함(파랑), 감시자의 시야(빨강)를 외우세요. 이때는 움직일 수 없습니다.\n불이 꺼지면 칸을 클릭해 이동합니다. 가로로 먼저, 세로로 걸어가며 방해물에서 멈춥니다.\n투표함 칸에 들어가면 손을 쓴 것입니다. 전부 처리하면 성공!\n불이 켜지는 순간 감시자 시야에 있으면 들킵니다. 깜빡이면 곧 전환됩니다.\n불이 켜진 동안 감시자는 다음 자리로 걸어갑니다. 걸어가는 곳을 잘 봐 두세요!"
 
 @export var id: StringName = &"owl_ballot"
 
 var _state: State = State.TUTORIAL
 var _cycle: int = 0 # 불이 켜진 횟수 (처음 켜짐 = 0)
 var _t_left: float = 0.0
+var _light_dur: float = 0.0
 var _cell: Vector2i
 var _target: Vector2i
 var _moving: bool = false
@@ -60,6 +61,7 @@ func _process(delta: float) -> void:
 	_t_left -= delta
 	if _state == State.LIGHT:
 		_set_lit(_t_left > CONFIG.flicker or int(_t_left * 10.0) % 2 == 0, true)
+		_walk_watchers()
 		if _t_left <= 0.0:
 			_enter_dark()
 	else:
@@ -95,6 +97,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _enter_light(duration: float, first: bool) -> void:
 	_state = State.LIGHT
 	_t_left = duration
+	_light_dur = duration
 	_moving = false
 	_set_lit(true, true)
 	var seen: Array[Vector2i] = OwlRules.all_vision(OwlLevel.map(), OwlLevel.WATCHERS, _cycle)
@@ -115,6 +118,22 @@ func _enter_light(duration: float, first: bool) -> void:
 		_near_missed = _near_missed or OwlRules.is_near(_cell, seen)
 		if _cycle >= CONFIG.cycles:
 			$HUD/StateLabel.text = "마지막 불! (이후 시간 초과)"
+
+
+# 불이 켜진 동안: 시야를 watch_hold초 보여 준 뒤 끄고, 감시자가 다음에 설 자리(path[cycle+1])로 걸어간다.
+# 다음 불이 켜질 때 _enter_light가 같은 자리에 세우므로 이어진다. 판정은 켜지는 순간뿐이라 걷는 동안엔 시야가 없다
+func _walk_watchers() -> void:
+	var walk_t: float = _light_dur - _t_left - CONFIG.watch_hold
+	var p: float = clampf(walk_t / maxf(_light_dur - CONFIG.watch_hold, 0.01), 0.0, 1.0)
+	if walk_t > 0.0:
+		for tile in _vision_tiles.values():
+			tile.visible = false
+	for i in _watchers.size():
+		var path: Array = OwlLevel.WATCHERS[i]["path"]
+		var from: Vector3 = _world(path[_cycle % path.size()])
+		var to: Vector3 = _world(path[(_cycle + 1) % path.size()])
+		_watchers[i].position = from.lerp(to, p)
+		_watchers[i].set_walking(p > 0.0 and p < 1.0)
 
 
 func _enter_dark() -> void:
