@@ -53,7 +53,12 @@ func _build_prop(at: Node3D, prop: StringName) -> void:
 			_part(at, _capsule(0.015, 0.9), Vector3(0, 0.4, 0), Vector3.ZERO, PALETTE.wood.darkened(0.3))
 			_part(at, _sphere(0.03), Vector3(0, 0.85, 0), Vector3.ZERO, PALETTE.danger)
 		&"mug":
-			_part(at, _cylinder(0.07, 0.15), Vector3(0, 0.03, 0.06), Vector3(PI / 2.0, 0, 0), PALETTE.paper)
+			# coffee 자세에서 손 뼈는 +y가 앞 위, +z가 앞 아래라 그 사이로 기울여야 컵이 서고 커피가 위를 본다
+			var tilt: float = -0.86
+			var up: Vector3 = Vector3(0, cos(tilt), sin(tilt))
+			var center: Vector3 = Vector3(0, 0.03, 0.06)
+			_part(at, _cylinder(0.07, 0.15), center, Vector3(tilt, 0, 0), PALETTE.mincho) # 몸(흰색)과 구별되게
+			_part(at, _cylinder(0.06, 0.01), center + up * 0.072, Vector3(tilt, 0, 0), PALETTE.wood.darkened(0.45)) # 커피
 		&"phone": # 구식 수화기
 			_part(at, _capsule(0.03, 0.26), Vector3(0, 0.05, 0.05), Vector3(0, 0, PI / 2.0), PALETTE.stamp)
 		&"pin": # 핀을 쥔 손

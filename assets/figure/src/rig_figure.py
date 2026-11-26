@@ -18,6 +18,8 @@ SMOOTH = 40  # 몸 가중치 다듬기 횟수
 CLOTH_SMOOTH = 40  # 옷 가중치 다듬기 횟수
 SKIRT_HIPS = 0.3  # 코트 자락이 다리 대신 엉덩이를 따르는 비율
 HEAD_FROM = 1.17  # 이 높이(목) 위의 몸은 머리 뼈만 따른다
+SHOULDER_SHARE = 0.33  # 작전 행동에서 팔 드는 각도 중 쇄골이 맡는 몫
+ARMPIT = (0.2, 0.98)  # 이 폭(|x|) 안쪽·이 높이 아래 몸통은 팔 가중치를 받지 않는다(팔을 들 때 옆구리가 끌려 부풀지 않게)
 
 
 def B(x, y, z):
@@ -32,7 +34,9 @@ BONES = {
     "head": (B(0, 1.1, 0), B(0, 1.7, 0), "spine"),
 }
 for side, sx in (("L", 1.0), ("R", -1.0)):
-    BONES["upper_arm." + side] = (B(0.2 * sx, 1.05, 0), B(0.265 * sx, 0.8, 0), "spine")
+    # 쇄골: 팔 드는 각도 일부를 나눠 맡는다. 어깨 관절 하나가 크게 꺾이면 그 둘레가 쪼그라들어 옷 속 몸이 드러난다
+    BONES["shoulder." + side] = (B(0.1 * sx, 1.07, 0), B(0.2 * sx, 1.05, 0), "spine")
+    BONES["upper_arm." + side] = (B(0.2 * sx, 1.05, 0), B(0.265 * sx, 0.8, 0), "shoulder." + side)
     BONES["forearm." + side] = (B(0.265 * sx, 0.8, 0), B(0.29 * sx, 0.5, 0.04), "upper_arm." + side)
     BONES["thigh." + side] = (B(0.095 * sx, 0.68, 0), B(0.095 * sx, 0.4, 0.01), "hips")
     BONES["shin." + side] = (B(0.095 * sx, 0.4, 0.01), B(0.1 * sx, 0.0, 0.05), "thigh." + side)
@@ -82,6 +86,7 @@ def skin(ob, arm, only=None):
         pin_head(ob)
         smooth_weights(ob, SMOOTH)
         pin_head(ob)
+        clear_armpit(ob)
     mod = ob.modifiers.new("armature", "ARMATURE")
     mod.object = arm
     ob.parent = arm
@@ -95,6 +100,25 @@ def pin_head(ob):
             for g in list(v.groups):
                 ob.vertex_groups[g.group].remove([v.index])
             head.add([v.index], 1.0, "REPLACE")
+
+
+def clear_armpit(ob):
+    """겨드랑이 아래 몸통에서 팔 가중치를 뺀다(다듬기로 번진 것). 남은 가중치는 합이 1이 되게 다시 나눈다"""
+    arms = {ob.vertex_groups[n].index for n in BONES if n.startswith(("shoulder", "upper_arm", "forearm"))}
+    for v in ob.data.vertices:
+        # 팔 안쪽 면은 몸통 옆면과 겹쳐 있다. 바깥(옆)을 보는 면만 몸통 옆면으로 친다
+        side = abs(v.co.x) < ARMPIT[0] and (abs(v.co.x) < 0.1 or v.normal.x * math.copysign(1.0, v.co.x) > 0.3)
+        if not side or v.co.z >= ARMPIT[1]:
+            continue
+        rest = [(g.group, g.weight) for g in v.groups if g.group not in arms]
+        total = sum(w for _, w in rest)
+        if total <= 0.0 or len(rest) == len(v.groups):
+            continue
+        for g in list(v.groups):
+            if g.group in arms:
+                ob.vertex_groups[g.group].remove([v.index])
+        for i, w in rest:
+            ob.vertex_groups[i].add([v.index], w / total, "REPLACE")
 
 
 def smooth_weights(ob, repeat):
@@ -122,6 +146,7 @@ def dress(ob, body, arm, skirt=False):
     mod.layers_vgroup_select_dst = "NAME"
     bpy.ops.object.modifier_apply(modifier=mod.name)
     smooth_weights(ob, CLOTH_SMOOTH)  # 몸통 옆 옷이 바로 옆 팔 면의 가중치를 받아 구겨지는 것을 펴 준다
+    clear_armpit(ob)
     if skirt:
         legs = {ob.vertex_groups[n].index for n in BONES if n.startswith(("thigh", "shin"))}
         hips = ob.vertex_groups["hips"]
@@ -222,7 +247,11 @@ def turn(arm, name, rots, frame):
 def act_pose(spec):
     """spec(ph) -> {뼈 이름: [(축, 각도), ...]}. 적지 않은 뼈는 기본 자세"""
     def pose(arm, f, ph):
-        rots = spec(ph)
+        rots = dict(spec(ph))
+        for side in ("L", "R"):  # 팔 드는 각도를 쇄골과 윗팔이 나눠 맡는다(축이 여럿이면 근사)
+            arm_rots = rots.get("upper_arm." + side, [])
+            rots["shoulder." + side] = [(a, v * SHOULDER_SHARE) for a, v in arm_rots]
+            rots["upper_arm." + side] = [(a, v * (1.0 - SHOULDER_SHARE)) for a, v in arm_rots]
         for name in BONES:
             if name != "hips":
                 turn(arm, name, rots.get(name, []), f)

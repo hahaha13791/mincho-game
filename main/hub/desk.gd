@@ -18,7 +18,7 @@ const HERO_SCALE: float = 1.8
 const ACTIONS: Dictionary = {
 	&"think": {"xs": [-3.2, 0.6, 4.0], "face": 0.0},
 	&"point": {"xs": [-4.5, 1.8], "face": 2.6, "prop": &"pointer"},
-	&"coffee": {"xs": [-1.5, 3.0], "face": 3.0, "prop": &"mug", "hide": "mug"},
+	&"coffee": {"xs": [-1.5, 3.0], "face": 2.2, "prop": &"mug", "hide": "mug"},
 	&"map": {"xs": [-2.0, 2.2], "face": 0.0, "desk": "map"},
 	&"phone": {"xs": [-4.0, 4.5], "face": 0.5, "prop": &"phone"},
 	&"pin": {"xs": [-3.5, 0.0, 3.2], "face": PI, "lift": 0.1, "prop": &"pin"},
@@ -130,14 +130,14 @@ func _build() -> void:
 	# 커피잔
 	var mug: Node3D = _group(Vector3(-5.6, TOP_Y, 0.2))
 	_desk_props["mug"] = mug
-	_cyl(mug, 0.3, 0.55, Vector3(0, 0.275, 0), PALETTE.paper)
+	_cyl(mug, 0.3, 0.55, Vector3(0, 0.275, 0), PALETTE.mincho)
 	_cyl(mug, 0.26, 0.02, Vector3(0, 0.55, 0), PALETTE.wood.darkened(0.45)) # 커피
 	var handle: MeshInstance3D = MeshInstance3D.new()
 	var torus: TorusMesh = TorusMesh.new()
 	torus.inner_radius = 0.1
 	torus.outer_radius = 0.17
 	handle.mesh = torus
-	handle.material_override = _mat(PALETTE.paper)
+	handle.material_override = _mat(PALETTE.mincho)
 	handle.position = Vector3(0.32, 0.3, 0)
 	handle.rotation.x = PI / 2.0
 	mug.add_child(handle)
