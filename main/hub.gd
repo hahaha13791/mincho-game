@@ -5,6 +5,7 @@ extends Control
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const LIST: MinigameList = preload("res://main/minigame_list.tres")
 const DESK: PackedScene = preload("res://main/hub/desk.tscn")
+const LIGHT_SHADER: Shader = preload("res://main/hub/hub_light.gdshader")
 const BOARD_SCALE: float = 0.85 # 주인공이 잘 보이게 보드를 줄인다
 const PINS: Array[String] = ["danger", "accent", "ballot_box", "mincho"] # 팔레트 이름. 메모마다 돌려 쓴다
 # 테스트용 채우기 프리셋(이름 -> 등급 목록). 목록은 순서대로 미니게임에 배정되고 모자라면 마지막 값을 쓴다
@@ -98,23 +99,6 @@ func _build_board() -> void:
 	_strings.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_strings.draw.connect(_draw_strings)
 	_board.add_child(_strings)
-
-	# 위에서 비추는 따뜻한 조명: 위쪽은 밝고 아래로 갈수록 어둑해진다
-	var light: TextureRect = TextureRect.new()
-	var grad: Gradient = Gradient.new()
-	grad.set_color(0, Color(PALETTE.lamp_light, 0.38))
-	grad.set_color(1, Color(0, 0, 0, 0.22))
-	grad.add_point(0.55, Color(PALETTE.lamp_light, 0.0))
-	var tex: GradientTexture2D = GradientTexture2D.new()
-	tex.gradient = grad
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, -0.15)
-	tex.fill_to = Vector2(0.5, 1.1)
-	light.texture = tex
-	light.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	light.set_anchors_preset(Control.PRESET_FULL_RECT)
-	light.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(light)
 
 
 func _make_decor(d: Dictionary, i: int) -> MemoCard:
@@ -220,6 +204,7 @@ func _build_desk() -> void:
 	var desk: HubDesk = DESK.instantiate()
 	vp.add_child(desk)
 	desk.set_stage(GameState.grades.size())
+	_build_light(desk)
 	# 리더보드: 책상 위 서류철 자리에 손글씨 버튼을 얹는다
 	var board: Button = Button.new()
 	board.theme_type_variation = &"HandButton"
@@ -228,6 +213,23 @@ func _build_desk() -> void:
 	board.reset_size()
 	board.position = desk.folder_screen_pos() - board.size / 2.0 + Vector2(0, -18)
 	board.pressed.connect(Flow.go_leaderboard)
+
+
+# 비밀 장소 조명: 화면 전체에 어둠을 깔고 천장 조명·책상 스탠드 빛만 남기는 덮개(hub/hub_light.gdshader)
+# 보드·책상을 덮는다. 리더보드·테스트 버튼은 어둠 속에서도 읽히게 그 위
+func _build_light(desk: HubDesk) -> void:
+	var mat: ShaderMaterial = ShaderMaterial.new()
+	mat.shader = LIGHT_SHADER
+	mat.set_shader_parameter("dark", PALETTE.hideout_dark)
+	mat.set_shader_parameter("warm", PALETTE.lamp_light)
+	var lamp: PackedVector2Array = desk.lamp_screen_pos()
+	mat.set_shader_parameter("lamp_shade", lamp[0])
+	mat.set_shader_parameter("lamp_pool", lamp[1])
+	var cover: ColorRect = ColorRect.new()
+	cover.material = mat
+	cover.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(cover)
 
 
 # shortcut: 테스트용 버튼들. 전시 전에 숨긴다

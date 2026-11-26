@@ -34,6 +34,7 @@ var _folder: Node3D
 var _hero: Protagonist
 var _desk_props: Dictionary = {} # 이름 -> Node3D (mug, magnifier)
 var _desk_root: Node3D # 책상과 그 위 소품. DESK_Z만큼 앞에
+var _lamp: Node3D
 
 
 func _ready() -> void:
@@ -94,6 +95,13 @@ func folder_screen_pos() -> Vector2:
 	return _camera.unproject_position(_folder.global_position)
 
 
+## 스탠드 빛이 화면에 찍히는 위치: [갓, 갓이 비추는 책상 위 웅덩이]. 허브 조명 덮개가 쓴다
+func lamp_screen_pos() -> PackedVector2Array:
+	var shade: Vector3 = _lamp.to_global(Vector3(1.4, 1.5, 0))
+	var pool: Vector3 = _lamp.to_global(Vector3(1.9, 0.0, 0.2))
+	return PackedVector2Array([_camera.unproject_position(shade), _camera.unproject_position(pool)])
+
+
 func _build() -> void:
 	_desk_root = Node3D.new()
 	_desk_root.position.z = DESK_Z
@@ -119,6 +127,7 @@ func _build() -> void:
 
 	# 스탠드(왼쪽)
 	var lamp: Node3D = _group(Vector3(-7.6, TOP_Y, -0.2))
+	_lamp = lamp
 	_cyl(lamp, 0.45, 0.08, Vector3(0, 0.04, 0), PALETTE.stamp)
 	var arm1: MeshInstance3D = _cap(lamp, 0.06, 1.6, Vector3(0.25, 0.8, 0), PALETTE.stamp)
 	arm1.rotation.z = -0.35
