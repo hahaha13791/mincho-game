@@ -272,31 +272,9 @@ func _build_visuals() -> void:
 	var door: MeshInstance3D = _box(Vector3(0.05, 1.2, 1.0), PALETTE.mincho.darkened(0.3)) # 길 쪽(왼쪽) 벽의 문
 	door.position = Vector3(-1.52, 0.6, 0.0)
 	_shop.add_child(door)
-	var cone: MeshInstance3D = MeshInstance3D.new()
-	var cone_mesh: CylinderMesh = CylinderMesh.new()
-	cone_mesh.top_radius = 0.45
-	cone_mesh.bottom_radius = 0.0
-	cone_mesh.height = 1.0
-	var cone_mat: StandardMaterial3D = StandardMaterial3D.new()
-	cone_mat.albedo_color = PALETTE.cardboard
-	cone_mesh.material = cone_mat
-	cone.mesh = cone_mesh
+	var cone: IceCream = IceCream.new() # 지붕 위 큰 콘(common/ice_cream.gd)
 	cone.position = Vector3(0.0, 2.7, 0.0)
 	_shop.add_child(cone)
-	var scoop: MeshInstance3D = MeshInstance3D.new()
-	var scoop_mesh: SphereMesh = SphereMesh.new()
-	scoop_mesh.radius = 0.55
-	scoop_mesh.height = 1.0
-	var scoop_mat: StandardMaterial3D = StandardMaterial3D.new()
-	scoop_mat.albedo_color = PALETTE.mincho
-	scoop_mesh.material = scoop_mat
-	scoop.mesh = scoop_mesh
-	scoop.position = Vector3(0.0, 3.35, 0.0)
-	_shop.add_child(scoop)
-	for chip in [Vector3(0.3, 0.25, 0.4), Vector3(-0.35, 0.1, 0.38), Vector3(0.05, 0.42, 0.35), Vector3(0.45, -0.05, 0.25)]:
-		var c: MeshInstance3D = _box(Vector3(0.14, 0.14, 0.14), PALETTE.chocolate)
-		c.position = scoop.position + chip
-		_shop.add_child(c)
 	var shop_label: Label3D = Label3D.new()
 	shop_label.text = "민트초코\n아이스크림"
 	shop_label.font_size = 72
