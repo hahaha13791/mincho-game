@@ -11,8 +11,8 @@ const CONFIG: IroningConfig = preload("res://minigames/vanishing_ink/ironing_con
 const IRON: PackedScene = preload("res://minigames/vanishing_ink/props/iron.tscn")
 const IRON_SCRIPT: Script = preload("res://minigames/vanishing_ink/props/iron.gd")
 const STAMP_MARK: PackedScene = preload("res://common/stamp_mark.tscn")
-const PAPER_SIZE: Vector3 = Vector3(5.0, 0.1, 3.6)
-const SCORCH_SCALE: float = 1.15 # 그을음 띠 = 바닥판 윤곽을 이만큼 키운 모양. 바닥판 밖으로 나온 둘레만 보인다
+const PAPER_SIZE: Vector3 = Vector3(5.6, 0.1, 4.0) # 그을음 띠(바닥판 + 띠 두께)가 종이 안에 들어오게
+const SCORCH_WIDTH: float = 0.45 # 그을음 띠 = 바닥판 윤곽을 이 두께만큼 고르게 넓히고 모서리를 둥글린 모양. 바닥판 밖으로 나온 둘레만 보인다
 const IRON_REST_POS: Vector3 = Vector3(0.0, 3.5, 0.0) # 종이 바로 위에 들어 둔다
 const IRON_PRESS_POS: Vector3 = Vector3(0.0, 0.45, 0.0) # 수직으로 내려와 종이 가운데(기표 위)를 덮는다
 const PAPER_OFF_X: float = 13.0 # 종이가 들어오고 나가는 화면 밖 거리
@@ -211,11 +211,8 @@ func _build_visuals() -> void:
 	_paper.add_child(sheet)
 
 	# 그을음 띠: 다리미 바닥판과 같은 모양(조금 크게)으로 다리미 놓이는 자리에 깐다. 다리미와 같은 회전(앞이 -x)
-	var outline: PackedVector2Array = PackedVector2Array()
-	for v in IRON_SCRIPT.SOLE:
-		outline.append(v * SCORCH_SCALE)
 	var scorch: CSGPolygon3D = CSGPolygon3D.new()
-	scorch.polygon = outline
+	scorch.polygon = Geometry2D.offset_polygon(IRON_SCRIPT.SOLE, SCORCH_WIDTH, Geometry2D.JOIN_ROUND)[0]
 	scorch.depth = 0.01
 	scorch.rotation.x = PI / 2.0 # 다리미 바닥판(iron.gd의 _slab)과 같은 방식으로 눕힌다
 	scorch.position = Vector3(IRON_PRESS_POS.x, PAPER_SIZE.y, IRON_PRESS_POS.z)
