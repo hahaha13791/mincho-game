@@ -14,6 +14,7 @@ extends Resource
 @export var sunglasses: Color = Color("1c1c1f")
 @export var belt: Color = Color("3a3b40") # 컨베이어 고무 벨트
 @export var stamp: Color = Color("2b2d33") # 기표 도장 몸통
+@export var iron_body: Color = Color("9aa3b0") # 다리미 몸체. 흰 종이 위에서 묻히지 않게 회색
 @export var accent: Color = Color("f2b84b")
 @export var danger: Color = Color("d9534f")
 @export var ballot_box: Color = Color("5b7fa6")

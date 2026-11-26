@@ -6,6 +6,7 @@ enum State { TUTORIAL, READY, IRONING, BETWEEN, ENDED }
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const CONFIG: IroningConfig = preload("res://minigames/vanishing_ink/ironing_config.tres")
+const IRON: PackedScene = preload("res://minigames/vanishing_ink/props/iron.tscn")
 const PAPER_SIZE: Vector3 = Vector3(4.0, 0.1, 3.0)
 const INNER_SIZE: Vector3 = Vector3(3.5, 0.12, 2.5)
 const IRON_REST_POS: Vector3 = Vector3(5.0, 1.6, 0.0) # 종이 옆에 치워 두어 기표를 가리지 않는다
@@ -25,7 +26,7 @@ var _steamed: bool = false
 var _edge_mat: StandardMaterial3D
 var _inner_mat: StandardMaterial3D
 var _mark: MeshInstance3D
-var _iron: MeshInstance3D
+var _iron: Node3D
 var _steam: CPUParticles3D
 var _iron_tween: Tween
 
@@ -180,7 +181,7 @@ func _build_visuals() -> void:
 	_mark.position = Vector3(0.0, INNER_SIZE.y + 0.01, 0.0)
 	add_child(_mark)
 
-	_iron = _box(Vector3(INNER_SIZE.x, 0.6, INNER_SIZE.z), PALETTE.iron) # 안쪽 면을 덮고 테두리만 드러남
+	_iron = IRON.instantiate() # 바닥판이 안쪽 면을 덮고 테두리만 드러남
 	_iron.position = IRON_REST_POS
 	add_child(_iron)
 
