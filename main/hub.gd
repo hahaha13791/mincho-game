@@ -62,8 +62,9 @@ func _build_board() -> void:
 	_center = _card(c["pos"], c["size"], c["tilt"], PALETTE.paper, PALETTE.danger)
 	_center.add_picture(PALETTE.ballot_box, 130.0)
 	_center.add_line("개표 당일", 1.15)
-	_center.add_line("작전 %d / %d" % [done, GameState.MINIGAME_COUNT], 0.85)
-	if done >= GameState.MINIGAME_COUNT:
+	if done < GameState.MINIGAME_COUNT:
+		_center.add_line("작전 %d / %d" % [done, GameState.MINIGAME_COUNT], 0.85)
+	else: # 열리면 진행도 대신 도장
 		_center.set_stamp("개표 개시!", PALETTE.danger)
 		_center.make_clickable()
 		_center.pressed.connect(Flow.go_final)
@@ -194,6 +195,7 @@ func _build_desk() -> void:
 	holder.add_child(vp)
 	var desk: HubDesk = DESK.instantiate()
 	vp.add_child(desk)
+	desk.set_stage(GameState.grades.size())
 	# 리더보드: 책상 위 서류철 자리에 손글씨 버튼을 얹는다
 	var board: Button = Button.new()
 	board.theme_type_variation = &"HandButton"

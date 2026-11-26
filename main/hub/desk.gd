@@ -7,9 +7,12 @@ extends Node3D
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 const TOP_Y: float = -2.7 # 책상 윗면 높이(월드). 화면 약 805px
 const DEPTH: float = 1.6
+const PROTAGONIST: PackedScene = preload("res://main/hub/protagonist.tscn")
+const HERO_SCALE: float = 1.8
 
 var _camera: Camera3D
 var _folder: Node3D
+var _hero: Protagonist
 
 
 func _ready() -> void:
@@ -38,6 +41,11 @@ func _ready() -> void:
 	_build()
 
 
+## 주인공 복장 단계(끝낸 작전 수)
+func set_stage(done: int) -> void:
+	_hero.set_stage(done)
+
+
 ## 리더보드 서류철이 화면에 찍히는 위치(버튼을 얹을 자리)
 func folder_screen_pos() -> Vector2:
 	return _camera.unproject_position(_folder.global_position)
@@ -50,6 +58,12 @@ func _build() -> void:
 	_box(Vector3(22, 5.0, 0.1), Vector3(0, TOP_Y - 2.6, DEPTH / 2.0 - 0.05), wood.darkened(0.15)) # 앞판(화면 아래 끝까지)
 	for x in [-6.0, 0.0, 6.0]: # 서랍 손잡이
 		_box(Vector3(0.6, 0.08, 0.08), Vector3(x, TOP_Y - 0.6, DEPTH / 2.0 + 0.02), PALETTE.iron)
+
+	# 주인공: 책상 뒤에 서서 허리 아래는 책상에 가린다
+	_hero = PROTAGONIST.instantiate()
+	_hero.scale = Vector3.ONE * HERO_SCALE
+	_hero.position = Vector3(4.4, TOP_Y - 1.05, -0.5)
+	add_child(_hero)
 
 	# 스탠드(왼쪽)
 	var lamp: Node3D = _group(Vector3(-7.6, TOP_Y, -0.2))

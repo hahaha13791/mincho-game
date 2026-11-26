@@ -5,21 +5,61 @@ extends SceneTree
 ## 방식: 부위(구·캡슐)를 거리장(SDF)으로 부드럽게 이어 붙이고 surface nets로 메시화. 원점은 발바닥, +z가 앞.
 
 const H: float = 0.01 # 격자 간격(m). 작을수록 매끈하지만 느림
-const LO: Vector3 = Vector3(-0.45, -0.03, -0.25)
-const HI: Vector3 = Vector3(0.45, 1.85, 0.46)
+const LO: Vector3 = Vector3(-0.45, -0.03, -0.38) # 뒤통수(-0.27)·머리띠 매듭(-0.35)까지 담는다
+const HI: Vector3 = Vector3(0.45, 1.95, 0.46)
 const EDGES: Array = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]]
 
 
+## 환경 변수 ONLY=coat,badge 처럼 주면 그 파츠만 다시 만든다(전부는 약 4분)
 func _init() -> void:
-	_build(_body, "res://assets/figure/src/body.obj")
-	_build(_shirt, "res://assets/figure/src/shirt.obj")
-	_build(_hat, "res://assets/figure/src/hat.obj")
-	_build(_jacket, "res://assets/figure/src/jacket.obj")
-	_build(_pants, "res://assets/figure/src/pants.obj")
-	_build(_tie, "res://assets/figure/src/tie.obj")
-	_build(_sunglasses, "res://assets/figure/src/sunglasses.obj")
-	_build(_armband, "res://assets/figure/src/armband.obj")
+	var parts: Dictionary = {
+		"body": _body, "shirt": _shirt, "hat": _hat, "jacket": _jacket, "pants": _pants, "tie": _tie,
+		"sunglasses": _sunglasses, "armband": _armband,
+		"headband": _headband, "fedora": _fedora, "coat": _coat, "badge": _badge,
+	}
+	var only: PackedStringArray = OS.get_environment("ONLY").split(",", false)
+	for part_name in parts:
+		if only.is_empty() or only.has(part_name):
+			_build(parts[part_name], "res://assets/figure/src/%s.obj" % part_name)
 	quit()
+
+
+## 머리띠: 이마를 두르는 띠(앞이 살짝 낮다) + 뒤통수 매듭 꼬리 두 가닥
+func _headband(p: Vector3) -> float:
+	var shell: float = absf(p.distance_to(Vector3(0, 1.42, 0)) - 0.283) - 0.016
+	var band: float = _smax(shell, absf(p.y - 1.52 + p.z * 0.15) - 0.04, 0.01)
+	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
+	var tail: float = _capsule(q, Vector3(0.03, 1.55, -0.29), Vector3(0.09, 1.38, -0.33), 0.022)
+	return _smin(band, tail, 0.02)
+
+
+## 중절모: 윗면이 움푹한 몸체 + 양옆이 살짝 올라간 챙. 머리띠가 챙 아래로 보이게 높이 쓴다
+func _fedora(p: Vector3) -> float:
+	var r: float = Vector2(p.x, p.z * 0.92).length()
+	var crown: float = Vector2(maxf(r - 0.22, 0.0), maxf(absf(p.y - 1.72) - 0.11, 0.0)).length() - 0.03
+	crown = _smax(crown, -_ellipsoid(p - Vector3(0, 1.88, 0), Vector3(0.05, 0.06, 0.18)), 0.02) # 윗면 주름
+	var brim_y: float = 1.6 + p.x * p.x * 0.7
+	var brim: float = Vector2(maxf(r - 0.4, 0.0), absf(p.y - brim_y)).length() - 0.022
+	return _smin(crown, brim, 0.02)
+
+
+## 트렌치코트: 긴소매, V자 깃, 무릎까지 오는 자락
+func _coat(p: Vector3) -> float:
+	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
+	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.03
+	var skirt: float = _capsule(Vector3(p.x, p.y, p.z * 1.25), Vector3(0, 0.78, 0), Vector3(0, 0.36, 0), 0.215) # 곧게 떨어지는 자락
+	d = _smin(d, skirt, 0.05)
+	d = _smax(d, p.y - 1.15, 0.02) # 목둘레
+	d = _smax(d, 0.3 - p.y, 0.02) # 밑단(무릎 위)
+	d = _smax(d, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리
+	d = _smax(d, minf(p.z - 0.04, (p.y - 0.85) * 0.6 - q.x), 0.01) # V자 앞섶
+	var collar: float = _capsule(q, Vector3(0.17, 1.12, 0.09), Vector3(0.02, 0.86, 0.165), 0.032)
+	return _smin(d, collar, 0.012)
+
+
+## 코트 왼쪽 가슴 배지
+func _badge(p: Vector3) -> float:
+	return _ellipsoid(p - Vector3(0.12, 1.0, 0.135), Vector3(0.045, 0.045, 0.014))
 
 
 func _body(p: Vector3) -> float:
@@ -96,7 +136,7 @@ func _sunglasses(p: Vector3) -> float:
 func _armband(p: Vector3) -> float:
 	var a: Vector3 = Vector3(0.2, 1.05, 0.0)
 	var b: Vector3 = Vector3(0.265, 0.8, 0.0)
-	var band: float = _capsule(p, a, b, 0.06 + 0.03)
+	var band: float = _capsule(p, a, b, 0.06 + 0.04) # 코트 소매(+0.03) 위로도 보이게
 	return _smax(band, absf((p - a.lerp(b, 0.45)).dot((b - a).normalized())) - 0.045, 0.01)
 
 

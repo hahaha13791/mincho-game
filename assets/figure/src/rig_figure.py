@@ -154,6 +154,10 @@ def main():
     skin(load("Tie", 1.0), arm, only="spine")
     skin(load("Sunglasses", 1.0), arm, only="head")
     skin(load("Armband", 0.5), arm, only="upper_arm.L")
+    skin(load("Headband", 0.6), arm, only="head")
+    skin(load("Fedora", 0.5), arm, only="head")
+    skin(load("Coat", 0.5), arm)
+    skin(load("Badge", 1.0), arm, only="spine")
     make_action(arm, "walk", walk_pose)
     make_action(arm, "idle", idle_pose)
     bpy.ops.export_scene.gltf(
