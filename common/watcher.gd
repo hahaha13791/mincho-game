@@ -1,7 +1,7 @@
 class_name Watcher
 extends Node3D
 ## 감시자. 겉모습은 이 서브씬에만 있다. 로직은 set_present()와 face()만 쓴다.
-## 모델은 assets/figure/figure.glb(하얀 인형)에 정장과 선글라스. 완장(Armband)은 만들어만 두었다.
+## 모델은 assets/figure/figure.glb(하얀 인형)에 재킷·바지·넥타이·선글라스. 완장(Armband)은 만들어만 두었다.
 
 const PALETTE: Palette = preload("res://common/style/palette.tres")
 
@@ -11,7 +11,13 @@ var _walking: bool = false
 
 
 func _ready() -> void:
-	FigureLook.dress(_figure, {"Body": PALETTE.doll, "Suit": PALETTE.suit, "Sunglasses": PALETTE.sunglasses})
+	FigureLook.dress(_figure, {
+		"Body": PALETTE.doll, # V자 앞섶 안으로 보이는 흰 몸이 셔츠 역할
+		"Jacket": PALETTE.suit,
+		"Pants": PALETTE.suit.darkened(0.35), # 재킷보다 어둡게 해 위아래 구분
+		"Tie": PALETTE.tie,
+		"Sunglasses": PALETTE.sunglasses,
+	})
 	FigureLook.play(_figure, "idle")
 
 

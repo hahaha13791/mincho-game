@@ -14,7 +14,9 @@ func _init() -> void:
 	_build(_body, "res://assets/figure/src/body.obj")
 	_build(_shirt, "res://assets/figure/src/shirt.obj")
 	_build(_hat, "res://assets/figure/src/hat.obj")
-	_build(_suit, "res://assets/figure/src/suit.obj")
+	_build(_jacket, "res://assets/figure/src/jacket.obj")
+	_build(_pants, "res://assets/figure/src/pants.obj")
+	_build(_tie, "res://assets/figure/src/tie.obj")
 	_build(_sunglasses, "res://assets/figure/src/sunglasses.obj")
 	_build(_armband, "res://assets/figure/src/armband.obj")
 	quit()
@@ -52,27 +54,42 @@ func _hat(p: Vector3) -> float:
 	return _smin(crown, visor, 0.02)
 
 
-## 감시자 정장: 긴소매 재킷 + 긴바지
-func _suit(p: Vector3) -> float:
+## 감시자 재킷: 긴소매, 앞은 V자로 파이고 깃(라펠)이 선다. V 안으로 흰 몸이 셔츠처럼 보인다
+func _jacket(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var jacket: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.02
-	jacket = _smax(jacket, p.y - 1.13, 0.02) # 목둘레
-	jacket = _smax(jacket, 0.6 - p.y, 0.02) # 밑단
-	jacket = _smax(jacket, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리: 손목 위에서 자름
-	# 바지는 다리 사이가 붙지 않게 조금만 부풀린다(다리 사이 틈 0.02)
-	var pants: float = _smin(_legs(q) - 0.008, _torso(p) - 0.012, 0.03)
-	pants = _smax(pants, p.y - 0.78, 0.02) # 허리(재킷 안쪽)
-	pants = _smax(pants, 0.15 - p.y, 0.02) # 발목
-	return minf(jacket, pants)
+	var d: float = _smin(_smin(_torso(p), _upper_arm(q), 0.04), _forearm(q), 0.02) - 0.025
+	d = _smax(d, p.y - 1.13, 0.02) # 목둘레
+	d = _smax(d, 0.55 - p.y, 0.02) # 밑단: 바지 윗부분을 덮는다
+	d = _smax(d, minf(0.63 - p.y, q.x - 0.2), 0.02) # 소맷부리: 손목 위에서 자름
+	# V자 앞섶: 앞쪽(z>0.04)이면서 |x| < (y-0.8)*0.55 인 곳을 파낸다
+	var v: float = minf(p.z - 0.04, (p.y - 0.8) * 0.55 - q.x)
+	d = _smax(d, v, 0.01)
+	var lapel: float = _capsule(q, Vector3(0.15, 1.11, 0.1), Vector3(0.012, 0.81, 0.155), 0.022)
+	return _smin(d, lapel, 0.01)
 
 
-## 선글라스: 렌즈 둘 + 코다리 + 다리. 머리 앞(+z)에 붙는다
+## 감시자 바지: 다리 사이가 붙지 않게 다리는 조금만 부풀린다(다리 사이 틈 0.02). 허리는 재킷 안쪽
+func _pants(p: Vector3) -> float:
+	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
+	var d: float = _smin(_legs(q) - 0.008, _torso(p) - 0.015, 0.03)
+	d = _smax(d, p.y - 0.8, 0.02) # 허리
+	return _smax(d, 0.15 - p.y, 0.02) # 발목
+
+
+## 넥타이: 매듭 + 아래로 넓어지는 몸통. 가슴(V 안쪽)에 붙고 끝은 재킷 안으로 들어간다
+func _tie(p: Vector3) -> float:
+	var knot: float = _ellipsoid(p - Vector3(0, 1.075, 0.14), Vector3(0.034, 0.03, 0.024))
+	var blade: float = _ellipsoid(p - Vector3(0, 0.93, 0.14), Vector3(0.05, 0.15, 0.017))
+	return _smin(knot, blade, 0.015)
+
+
+## 선글라스: 얼굴에서 살짝 띄운 렌즈 둘 + 위 테 + 귀까지 가는 다리
 func _sunglasses(p: Vector3) -> float:
 	var q: Vector3 = Vector3(absf(p.x), p.y, p.z)
-	var lens: float = _ellipsoid(q - Vector3(0.09, 1.45, 0.265), Vector3(0.075, 0.05, 0.025))
-	var bridge: float = _capsule(p, Vector3(-0.03, 1.47, 0.275), Vector3(0.03, 1.47, 0.275), 0.015)
-	var temple: float = _capsule(q, Vector3(0.16, 1.46, 0.23), Vector3(0.262, 1.46, 0.06), 0.017)
-	return _smin(_smin(lens, bridge, 0.01), temple, 0.01)
+	var lens: float = _ellipsoid(q - Vector3(0.09, 1.45, 0.287), Vector3(0.083, 0.057, 0.019))
+	var brow: float = _capsule(p, Vector3(-0.17, 1.49, 0.285), Vector3(0.17, 1.49, 0.285), 0.017) # 위 테 겸 코다리
+	var temple: float = _capsule(q, Vector3(0.17, 1.475, 0.27), Vector3(0.27, 1.475, 0.03), 0.017)
+	return _smin(_smin(lens, brow, 0.012), temple, 0.012)
 
 
 ## 완장: 왼팔(+x) 윗팔에 두르는 띠. 셔츠·정장 소매보다 두껍게

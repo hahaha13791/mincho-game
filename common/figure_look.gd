@@ -1,7 +1,7 @@
 class_name FigureLook
 extends RefCounted
 ## assets/figure/figure.glb(하얀 인형)의 겉모습 도우미. 인물 서브씬(주민·감시자 등)이 같이 쓴다.
-## glb 안 파츠: Body, Shirt, Hat, Suit, Sunglasses, Armband / 애니메이션: walk, idle
+## glb 안 파츠: Body, Shirt, Hat, Jacket, Pants, Tie, Sunglasses, Armband / 애니메이션: walk, idle
 
 
 ## outfit에 적은 파츠만 보이고 그 색으로 칠한다. 적지 않은 파츠는 숨긴다
