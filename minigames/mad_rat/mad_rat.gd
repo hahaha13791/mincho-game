@@ -85,8 +85,11 @@ func _begin_wave(w: int) -> void:
 	_wave = w
 	_wave_left = CONFIG.wave_counts[w]
 	_next_spawn = CONFIG.wave_pause
-	_hint.text = "새 규칙!" if w > 0 else ""
-	_plant_sign(w)
+	if w < RULE_SIGNS.size():
+		_hint.text = "새 규칙!" if w > 0 else ""
+		_plant_sign(w)
+	else:
+		_hint.text = "규칙은 그대로, 한 번 더!"
 	_refresh()
 
 

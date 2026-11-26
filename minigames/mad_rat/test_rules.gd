@@ -26,7 +26,6 @@ func _init() -> void:
 	var cfg: MadRatConfig = load("res://minigames/mad_rat/mad_rat_config.tres")
 	var n: int = cfg.wave_counts.size()
 	_check(cfg.wave_speed.size() == n and cfg.wave_gap.size() == n, "웨이브 배열 길이가 같음")
-	_check(n <= 4, "규칙 표지판(4개)보다 웨이브가 많지 않음")
 
 	print("TEST OK" if _fails == 0 else "TEST FAILED: %d" % _fails)
 	quit(_fails)
