@@ -18,9 +18,9 @@ const CHECKS: Array[String] = [
 ]
 # 네 귀퉁이 주인공: 발 위치(3D 단위), 복장 단계(끝낸 작전 수), 행동, 소품. 왼쪽은 오른쪽을, 오른쪽은 왼쪽을 비스듬히 본다
 const CREW: Array[Dictionary] = [
-	{"pos": Vector2(-4.3, 0.75), "stage": 0, "anim": "phone", "prop": &"phone"},
+	{"pos": Vector2(-4.3, -2.85), "stage": 0, "anim": "phone", "prop": &"phone"},
 	{"pos": Vector2(4.3, -2.85), "stage": 2, "anim": "magnifier", "prop": &"magnifier"},
-	{"pos": Vector2(-4.3, -2.85), "stage": 4, "anim": "coffee", "prop": &"mug"},
+	{"pos": Vector2(-4.3, 0.75), "stage": 4, "anim": "coffee", "prop": &"mug"},
 	{"pos": Vector2(4.3, 0.75), "stage": GameState.MINIGAME_COUNT, "anim": "point", "prop": &"pointer"},
 ]
 const CREW_TURN: float = 0.6
