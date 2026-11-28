@@ -50,7 +50,7 @@ func _ready() -> void:
 	var sun: DirectionalLight3D = DirectionalLight3D.new() # 위에서 비추는 따뜻한 백색 조명
 	sun.rotation_degrees = Vector3(-78, 12, 0)
 	sun.light_color = PALETTE.lamp_light
-	sun.light_energy = 1.15
+	sun.light_energy = 1.4
 	sun.shadow_enabled = true
 	sun.shadow_opacity = 0.45
 	add_child(sun)
@@ -58,7 +58,7 @@ func _ready() -> void:
 	env.background_mode = Environment.BG_CLEAR_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = PALETTE.lamp_light
-	env.ambient_light_energy = 0.55
+	env.ambient_light_energy = 0.75
 	var we: WorldEnvironment = WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
