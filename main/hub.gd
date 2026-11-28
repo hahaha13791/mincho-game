@@ -217,8 +217,8 @@ func _build_light(desk: HubDesk) -> void:
 	mat.shader = LIGHT_SHADER
 	mat.set_shader_parameter("dark", PALETTE.hideout_dark)
 	mat.set_shader_parameter("warm", PALETTE.lamp_light)
-	mat.set_shader_parameter("max_dark", 0.35) # 기본 0.75는 보드 가장자리가 너무 어둡다
-	mat.set_shader_parameter("warm_alpha", 0.06) # 빛 안쪽도 덜 덮어 더 밝게
+	mat.set_shader_parameter("max_dark", 0.5) # 기본 0.75는 보드 가장자리가 너무 어둡다
+	mat.set_shader_parameter("warm_alpha", 0.3) # 천장 조명 빛(밝은 색)을 보드에 더 진하게 얹어 환하게
 	mat.set_shader_parameter("ceiling_radius", Vector2(1250, 1600))
 	var lamp: PackedVector2Array = desk.lamp_screen_pos()
 	mat.set_shader_parameter("lamp_shade", lamp[0])
