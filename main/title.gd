@@ -29,7 +29,7 @@ const NAME_MAX: int = 10 # 리더보드 한 줄에 들어가게
 
 var _stamp_slot: Control
 var _start: Button
-var _sign: LineEdit
+var _sign: ImeLineEdit
 var _ice: IceCream
 var _sfx: AudioStreamPlayer
 
@@ -123,7 +123,7 @@ func _signature() -> HBoxContainer:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
 	row.add_child(_hand("서명:", 40, INK, HORIZONTAL_ALIGNMENT_LEFT))
-	_sign = LineEdit.new()
+	_sign = ImeLineEdit.new() # 한글 확정 글자가 사라지는 엔진 버그 우회
 	_sign.custom_minimum_size = Vector2(380, 0)
 	_sign.max_length = NAME_MAX
 	_sign.placeholder_text = "이름 (안 써도 됨)"
