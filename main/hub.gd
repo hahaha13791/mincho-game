@@ -78,9 +78,8 @@ func _build_board() -> void:
 		if GameState.is_done(entry.id):
 			var rank: Grade.Rank = GameState.grades[entry.id]
 			memo.set_stamp(Grade.NAMES[rank], _rank_color(rank))
-		else:
-			memo.make_clickable()
-			memo.pressed.connect(Flow.start.bind(entry))
+		memo.make_clickable() # 끝낸 작전도 다시 할 수 있다
+		memo.pressed.connect(Flow.start.bind(entry))
 		_memos[entry.id] = memo
 
 	_strings = Control.new() # 빨간 실과 핀 머리. 메모 위에 그린다
@@ -202,6 +201,13 @@ func _build_desk() -> void:
 	board.reset_size()
 	board.position = desk.folder_screen_pos() - board.size / 2.0 + Vector2(0, -18)
 	board.pressed.connect(Flow.go_leaderboard)
+	var title: Button = Button.new() # 타이틀로: 같은 손글씨 버튼을 리더보드 옆에
+	title.theme_type_variation = &"HandButton"
+	title.text = "타이틀로"
+	add_child(title)
+	title.reset_size()
+	title.position = board.position + Vector2(board.size.x + 30, 0)
+	title.pressed.connect(Flow.go_title)
 
 
 # 비밀 장소 조명: 화면 전체에 어둠을 깔고 천장 조명·책상 스탠드 빛만 남기는 덮개(hub/hub_light.gdshader)

@@ -38,10 +38,10 @@ func _ready() -> void:
 	back.custom_minimum_size = Vector2(300, 80)
 	back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	back.pressed.connect(func() -> void:
-		# 방금 등록하고 온 사람은 다음 방문자를 위해 타이틀로, 허브에서 보러 온 사람은 허브로
+		# 방금 등록하고 온 사람은 다음 방문자를 위해 타이틀로, 아니면 열었던 화면(타이틀·작전본부실)으로
 		var registered: bool = Leaderboard.highlight_id != -1
 		Leaderboard.highlight_id = -1
-		Flow.go_title() if registered else Flow.go_hub())
+		Flow.go_title() if registered or Flow.leaderboard_from != Flow.HUB_SCENE else Flow.go_hub())
 	box.add_child(back)
 
 

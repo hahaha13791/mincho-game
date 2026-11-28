@@ -29,17 +29,19 @@ func is_done(id: StringName) -> bool:
 	return grades.has(id)
 
 
-## 미니게임당 1회만 반영한다. 이미 끝낸 id는 무시하고 false를 반환한다.
+## 다시 하면 마지막 등급으로 바꾸고 득표를 등급 전체에서 다시 계산한다. 처음 끝낸 미니게임이면 true.
 func submit_result(id: StringName, rank: Grade.Rank) -> bool:
-	if is_done(id):
-		return false
+	var first: bool = not is_done(id)
 	grades[id] = rank
-	mincho_percent = clampf(mincho_percent + config.vote_delta[rank], 0.0, 100.0)
+	var sum: float = config.start_mincho_percent
+	for r: Grade.Rank in grades.values():
+		sum += config.vote_delta[r]
+	mincho_percent = clampf(sum, 0.0, 100.0)
 	vote_changed.emit(mincho_percent)
 	minigame_finished.emit(id, rank)
-	if grades.size() >= MINIGAME_COUNT:
+	if first and grades.size() >= MINIGAME_COUNT:
 		all_finished.emit()
-	return true
+	return first
 
 
 func total_score() -> int:
