@@ -155,7 +155,7 @@ func _end_round(ok: bool, msg: String, burned: bool) -> void:
 func _finish() -> void:
 	_state = State.ENDED
 	_hint.text = ""
-	var rank: Grade.Rank = VanishingInkRules.judge(_successes, _faints, CONFIG.rounds, CONFIG.need_success, _min_margin, CONFIG.safe_margin)
+	var rank: Grade.Rank = VanishingInkRules.judge(_successes, _faints, CONFIG.need_perfect, CONFIG.need_success, _min_margin, CONFIG.safe_margin)
 	var msg: String
 	match rank:
 		Grade.Rank.PERFECT:

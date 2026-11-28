@@ -3,11 +3,11 @@ extends RefCounted
 
 
 ## clean = 깨끗이 지운 장 수, faint = 옅게 남은 장 수, min_margin = 깨끗이 지운 장 중 가장 빠듯했던 여유(김 남 → 탐 사이 비율)
-## 지운 장(옅게 포함)이 need 미만이면 적발. 전부 깨끗하고 여유 있게 지웠으면 완전범죄
-static func judge(clean: int, faint: int, rounds: int, need: int, min_margin: float, safe_margin: float) -> Grade.Rank:
+## 지운 장(옅게 포함)이 need 미만이면 적발. 깨끗이 지운 장이 need_perfect 이상이고 모두 여유 있게 지웠으면 완전범죄
+static func judge(clean: int, faint: int, need_perfect: int, need: int, min_margin: float, safe_margin: float) -> Grade.Rank:
 	if clean + faint < need:
 		return Grade.Rank.CAUGHT
-	return Grade.Rank.PERFECT if clean == rounds and min_margin >= safe_margin else Grade.Rank.SUCCESS
+	return Grade.Rank.PERFECT if clean >= need_perfect and min_margin >= safe_margin else Grade.Rank.SUCCESS
 
 
 ## 김 나기 전에 뗐을 때 기표 진하기(1 = 그대로). progress = 뗀 시점 / 김 나는 시점. faint_from 미만이면 그대로
